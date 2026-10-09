@@ -24,11 +24,14 @@ def _safe_source(root: Path, relative: object) -> Path | None:
     raw = Path(relative)
     if raw.is_absolute() or any(part in ('.', '..') for part in raw.parts):
         return None
-    resolved_root = root.resolve()
-    candidate = (resolved_root / raw).resolve()
-    if not candidate.is_relative_to(resolved_root) or not candidate.is_file():
+    try:
+        resolved_root = root.resolve(strict=True)
+        candidate = (resolved_root / raw).resolve(strict=True)
+        if not candidate.is_relative_to(resolved_root) or not candidate.is_file():
+            return None
+        return candidate
+    except (OSError, RuntimeError, ValueError):
         return None
-    return candidate
 
 
 def _time(value: object) -> bool:
@@ -80,14 +83,18 @@ def validate(manifest: dict, root: Path) -> dict:
             if not isinstance(expected, str) or not _HASH.fullmatch(expected):
                 errors.append(f'{label}: invalid source hash')
             else:
-                if panel not in hash_cache:
-                    hash_cache[panel] = file_hash(panel)
-                if hash_cache[panel] != expected:
-                    errors.append(f'{label}: source hash mismatch')
+                try:
+                    if panel not in hash_cache:
+                        hash_cache[panel] = file_hash(panel)
+                    if hash_cache[panel] != expected:
+                        errors.append(f'{label}: source hash mismatch')
+                except OSError:
+                    errors.append(f'{label}: unreadable source')
         speaker = clip.get('speaker')
         if not isinstance(speaker, str) or speaker not in voices:
             errors.append(f'{label}: unknown speaker')
-        if clip.get('voice') != voices.get(speaker) or not voices.get(speaker):
+        assigned_voice = voices.get(speaker) if isinstance(speaker, str) else None
+        if not isinstance(clip.get('voice'), str) or clip.get('voice') != assigned_voice or not assigned_voice:
             errors.append(f'{label}: voice mismatch')
         event = clip.get('event_id')
         if not isinstance(event, str) or not event.strip():
@@ -114,10 +121,13 @@ def validate(manifest: dict, root: Path) -> dict:
 
 def certify(manifest: dict, root: Path, rendered: Path) -> dict:
     report = validate(manifest, root)
-    if not rendered.is_file() or rendered.stat().st_size == 0:
-        report['errors'].append('missing/empty render')
-    else:
-        report['render_sha256'] = file_hash(rendered)
+    try:
+        if not rendered.is_file() or rendered.stat().st_size == 0:
+            report['errors'].append('missing/empty render')
+        else:
+            report['render_sha256'] = file_hash(rendered)
+    except OSError:
+        report['errors'].append('unreadable render')
     report['status'] = 'NOT_CERTIFIED'
     report['release_allowed'] = False
     report['missing_checks'] = ['decoded frame inspection', 'speech verification', 'semantic panel alignment', 'independent QC']
