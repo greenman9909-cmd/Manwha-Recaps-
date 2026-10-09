@@ -110,6 +110,18 @@ function renderStatus(){
  find("google-status").textContent=state.data.google_tts_configured ?
   "Google AI Studio: locally configured. Kokoro remains MC by default." :
   "Google voice key not yet saved. Configure on this Windows laptop; no charges until generation.";
+ var voiceLink=document.querySelector(".voice-setup-link");
+ if(voiceLink){
+  if(state.data.google_tts_configured){
+   voiceLink.textContent="✓ Google AI voices connected";
+   voiceLink.removeAttribute("href");
+   voiceLink.classList.add("connected");
+  }else{
+   voiceLink.textContent="◎ Configure Google AI voices ↗";
+   voiceLink.setAttribute("href","http://127.0.0.1:8771/");
+   voiceLink.classList.remove("connected");
+  }
+ }
  var leaders=find("leadership");leaders.replaceChildren();
  ["ceo","operator","management"].forEach(function(id){var p=person(id),div=node("div","lead-item"),img=node("img"),name=node("div");img.src=avatar(id);img.alt="";name.append(node("strong",null,p.name),node("span",null,p.title));div.append(img,name);leaders.append(div)})
 }

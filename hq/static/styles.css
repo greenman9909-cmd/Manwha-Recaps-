@@ -7,3 +7,4 @@
 .voice-setup-link{display:block;margin-top:10px;border:1px solid #473d73;border-radius:10px;padding:11px 12px;text-decoration:none;text-align:center;background:#2b2746;color:#ded3ff;font-weight:750;font-size:11px}.voice-setup-link:hover{background:#373158}.voice-hint{display:block;margin-top:8px;color:#8f9db4;font-size:10px;line-height:1.45}
 
 .role-pill.local-ai{color:#a9e7d2;background:#173e3c;border-color:#357469}.model-label.offline{color:#e8c494;border-color:#665039;background:#31251e}.model-label.offline .neon-dot{background:#d0a56a;box-shadow:0 0 0 3px #d0a56a22}.message-row:has(.local-ai) .msg-bubble{border-color:#395d57;background:#192f37}
+.voice-setup-link.connected{background:#173e32;border-color:#346a56;color:#b2f0d1;cursor:default;text-decoration:none}

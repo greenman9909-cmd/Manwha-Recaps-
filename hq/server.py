@@ -538,8 +538,8 @@ def main():
         print(json.dumps(execute(args.action),ensure_ascii=False,indent=2))
         return
     if args.serve:
-        key=SECRET.read_text("utf8").strip()
-        print("ASHENTOONS_HQ_URL=http://192.168.1.66:8770/?key="+key,flush=True)
+        # Never write the bearer token into stdout, logs or tool output.
+        print("ASHENTOONS_HQ_LOCAL=http://127.0.0.1:8770/open",flush=True)
         print("SERVER_AUTH_REQUIRED=true MODE=GPT-6-connected-plus-local-workers",flush=True)
         ThreadingHTTPServer((BIND,PORT),Handler).serve_forever()
         return
