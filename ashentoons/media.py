@@ -32,6 +32,7 @@ def probe_media(path: Path, timeout: float = 30) -> dict:
             raise ValueError("invalid video dimensions")
         return {"status": "PASS", "duration": duration,
                 "video_codec": video[0].get("codec_name"),
+                "width": int(video[0]["width"]), "height": int(video[0]["height"]),
                 "audio_codec": audio[0].get("codec_name"),
                 "note": "Container/stream metadata only; decoded frames and sync not verified"}
     except (KeyError, ValueError, TypeError, OverflowError):
