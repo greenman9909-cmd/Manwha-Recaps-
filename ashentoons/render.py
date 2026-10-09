@@ -4,7 +4,7 @@ This module does not generate narration, verify rights, or certify semantics.
 """
 from __future__ import annotations
 
-import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -15,7 +15,7 @@ def render_clip(root: Path, panel: str, audio: str, output: Path,
                 duration: float, width: int = 1280, height: int = 720,
                 timeout: int = 180) -> dict:
     """Render one image+audio clip atomically; reject unsafe paths and partial output."""
-    if type(duration) not in (int, float) or not (0.1 <= duration <= 30):
+    if type(duration) not in (int, float) or not math.isfinite(duration) or not (0.1 <= duration <= 30):
         return {"status":"FAIL","errors":["duration outside 0.1–30 seconds"]}
     if type(width) is not int or type(height) is not int or width < 320 or height < 240 or width > 3840 or height > 2160 or width % 2 or height % 2:
         return {"status":"FAIL","errors":["invalid output dimensions"]}
