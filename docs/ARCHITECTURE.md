@@ -1,9 +1,9 @@
-# AshenToons Studio architecture (v0.3)
+# AshenToons Studio architecture (v0.4 candidate)
 
 ## Boundaries
 
 - **GPT-6**: plans narrative beats, investigates style, helps create original commentary and drafts source-to-panel match explanations. It does not assert semantic verification based on text alone.
-- **Optional Kokoro-82M TTS**: one canonical `am_puck` English MC voice for narration; generate 0.1–30 second atomic WAV lines.
+- **Optional Kokoro-82M TTS**: default `am_puck` English MC for legacy scripts, or a stable user-authored actor voice registry (e.g. `MC: am_fenrir`, `Hero: am_puck`, `Rival: am_michael`); generate 0.1–30 second atomic WAV lines. No claim of automatic acting/dubbing synchronization.
 - **FFmpeg / ffprobe**: deterministic 24-fps render/assemble; source-only still panels, centered zoom effects, AAC audio; no subtitle streams added.
 - **Independent reviewer**: compares actual rendered frames, original authorized source panels and narration, then checks the human review sheet.
 - **YouTube**: metadata draft and optional explicit OAuth **private-only** draft uploader. No public publisher, no automatic release.
@@ -17,7 +17,7 @@ authorized JPG/PNG/WEBP + owner-provided SHA-256
              |
         storyboard audit
              |
-   Kokoro-82M Puck once per batch -> SHA-addressed cached WAV clips
+   Kokoro-82M voice-registry routing once per batch -> SHA-addressed cached WAV clips
              |
    timed episode manifest (source hashes + narration audio hashes)
              |
@@ -42,13 +42,13 @@ authorized JPG/PNG/WEBP + owner-provided SHA-256
 
 Each clip needs a relative authorized `panel`, `panel_sha256` computed before editing, unique grounded `event_id`, `narration`, `chapter` integer, `panel_summary` of at least eight characters, `match_reason` of at least eight characters, `narrative_role` (`hook`, `setup`, `conflict`, `reveal`, `reaction`, `payoff`, `transition`, `cliffhanger`), and optional `motion` (`static`, `zoom_in`, `zoom_out`). The outer JSON explicitly specifies `source_authorized: true`, `subtitles: false`, `generated_visuals: false`.
 
-An input manifest used for rendering includes `voices: {"MC":"am_puck"}`, each shot's `speaker: "MC"`, `voice: "am_puck"`, `audio`, `audio_sha256` and monotonic `start/end` seconds. `narrate-script` prepares those fields.
+An input manifest used for rendering includes `voices: {"MC":"am_puck"}` by default; new scripts may specify several approved English Kokoro voices with per-clip speaker IDs. See [story direction and cast QA](STORYTELLING_MULTIVOICE.md). An input manifest, each shot's `speaker: "MC"`, `voice: "am_puck"`, `audio`, `audio_sha256` and monotonic `start/end` seconds. `narrate-script` prepares those fields.
 
 ## Efficiency
 
 - Stream SHA-256 rather than loading complete images into memory.
 - Lazy-load Kokoro only if speech is missing; reuse one pipeline for all lines in the batch.
-- Cache speech by normalized line text, voice, speed and cache revision; cache clips by panel/audio hashes, dimensions, motion and revision.
+- Cache speech by voice ID, normalized line text, speed and cache revision; cache clips by panel/audio hashes, dimensions, motion and revision.
 - For 8GB VRAM systems, avoid simultaneous heavy AI inference and rendering; CLI serializes the latter. FFmpeg encoding defaults to CPU `libx264` for portability; GPU-specific benchmarks/acceleration are future work.
 - Target 240 seconds per reviewable part, never exceed 300 seconds except the single shot durations are already validated to <=30 seconds.
 - Fail before rendering if a panel hash, narration hash, narration timing, storyboard description, or chapter is missing/invalid.

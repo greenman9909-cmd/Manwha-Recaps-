@@ -15,7 +15,7 @@ import tempfile
 
 from .core import _safe_source, audit_source_image, file_hash, validate
 from .storyboard import audit_storyboard
-from .tts import synthesize, VOICE
+from .tts import synthesize, VOICE, SUPPORTED_VOICES
 from .production import probe_audio
 
 CACHE_REVISION = "kokoro82m-puck-en-v1"
@@ -48,6 +48,17 @@ def narrate_script(script: dict, source_root: Path, output_manifest: Path,
     if (type(speed) not in (float, int) or not math.isfinite(speed)
             or speed < 0.75 or speed > 1.25):
         return {"status": "FAIL", "errors": ["invalid voice speed"]}
+    # Registry is part of the authored story, so character voices remain
+    # consistent across episodes. Legacy one-voice scripts still work.
+    voices = script.get("voices", {"MC": VOICE})
+    if (not isinstance(voices, dict) or not 1 <= len(voices) <= 32
+            or "MC" not in voices
+            or any(not isinstance(name, str) or not name or len(name) > 80
+                   or not isinstance(voice, str) or voice not in SUPPORTED_VOICES
+                   for name, voice in voices.items())):
+        return {"status": "FAIL", "errors": ["invalid/unsupported character voice registry"]}
+    if any(voice == voices["MC"] for name, voice in voices.items() if name != "MC"):
+        return {"status": "FAIL", "errors": ["MC narrator must have a different voice from characters"]}
     shots = script.get("clips")
     if not isinstance(shots, list) or not 1 <= len(shots) <= 2000:
         return {"status": "FAIL", "errors": ["1–2000 script clips required"]}
@@ -71,6 +82,12 @@ def narrate_script(script: dict, source_root: Path, output_manifest: Path,
         if audit["status"] != "PASS":
             return {"status": "FAIL", "errors": [f"clip[{i}]: invalid panel source/hash"],
                     "detail": audit}
+        speaker = shot.get("speaker", "MC")
+        if not isinstance(speaker, str) or speaker not in voices:
+            return {"status": "FAIL", "errors": [f"clip[{i}]: speaker not in voice registry"]}
+        declared = shot.get("voice")
+        if declared is not None and declared != voices[speaker]:
+            return {"status": "FAIL", "errors": [f"clip[{i}]: speaker voice mismatch"]}
         motion = shot.get("motion", "static")
         if not isinstance(motion, str) or motion not in ("static", "zoom_in", "zoom_out"):
             return {"status": "FAIL", "errors": [f"clip[{i}]: invalid motion"]}
@@ -85,8 +102,15 @@ def narrate_script(script: dict, source_root: Path, output_manifest: Path,
     reused = 0
     for i, shot in enumerate(shots):
         text = shot["narration"].strip()
-        digest = sha256(
-            f"{CACHE_REVISION}|{speed}|{text}".encode("utf-8")).hexdigest()[:32]
+        speaker = shot.get("speaker", "MC")
+        voice = voices[speaker]
+        # Preserve existing Puck cache addresses for one-voice episodes.
+        # Other voice IDs produce unique cache keys for identical lines.
+        cache_key = (
+            f"{CACHE_REVISION}|{speed}|{text}" if voice == VOICE
+            else f"{CACHE_REVISION}|{voice}|{speed}|{text}"
+        )
+        digest = sha256(cache_key.encode("utf-8")).hexdigest()[:32]
         audio_file = audio_folder / f"line-{digest}.wav"
         probed = None
         if audio_file.exists() or audio_file.is_symlink():
@@ -103,7 +127,8 @@ def narrate_script(script: dict, source_root: Path, output_manifest: Path,
                 except (ImportError, RuntimeError, OSError) as exc:
                     return {"status": "FAIL", "errors": ["Kokoro pipeline unavailable: " + str(exc)[:180]],
                             "completed_audio_lines": i}
-            result = synthesize(text, audio_file, speed=speed, pipeline=pipeline)
+            kwargs = {} if voice == VOICE else {"voice": voice}
+            result = synthesize(text, audio_file, speed=speed, pipeline=pipeline, **kwargs)
             if result["status"] != "PASS":
                 return {"status": "FAIL", "errors": [f"clip[{i}]: Kokoro synthesis failed"],
                         "detail": result, "completed_audio_lines": i}
@@ -123,7 +148,7 @@ def narrate_script(script: dict, source_root: Path, output_manifest: Path,
         produced.append({
             "panel": shot["panel"], "panel_sha256": shot["panel_sha256"],
             "audio": audio_relative, "audio_sha256": audio_sha,
-            "speaker": "MC", "voice": VOICE,
+            "speaker": speaker, "voice": voice,
             "event_id": shot["event_id"],
             "event_continuation": shot.get("event_continuation", False),
             "chapter": shot["chapter"], "narration": text,
@@ -136,7 +161,7 @@ def narrate_script(script: dict, source_root: Path, output_manifest: Path,
         start = round(start + duration, 3)
     manifest = {
         "source_authorized": True, "subtitles": False,
-        "generated_visuals": False, "voices": {"MC": VOICE},
+        "generated_visuals": False, "voices": dict(voices),
         "clips": produced,
     }
     checked = validate(manifest, source_root)
