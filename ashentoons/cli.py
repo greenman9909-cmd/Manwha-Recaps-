@@ -16,10 +16,11 @@ from .production import plan_parts, render_parts
 from .storyboard import audit_storyboard, review_template, check_review
 from .qc import decode_check
 from .seo import seo_draft
-from .tts import synthesize
+from .tts import synthesize, VOICE, SUPPORTED_VOICES
 from .narrate import narrate_script
 from .review_frames import extract_review_frames
 from .workspace import initialize_workspace
+from .memanga_ingest import ingest_memanga_chapter
 from .thumbnail import make_thumbnail
 from .youtube import upload_private_draft
 
@@ -121,6 +122,7 @@ def main(argv=None):
     tts.add_argument("text")
     tts.add_argument("output", type=Path)
     tts.add_argument("--speed", type=float, default=1.0)
+    tts.add_argument("--voice", default=VOICE, choices=sorted(SUPPORTED_VOICES))
 
     script = sub.add_parser("narrate-script", help="generate WAV clips and timed manifest with Kokoro")
     script.add_argument("script", type=Path)
@@ -137,6 +139,13 @@ def main(argv=None):
     frames.add_argument("--output-dir", type=Path, required=True)
     frames.add_argument("--target-seconds", type=float, default=240)
     frames.add_argument("--max-seconds", type=float, default=300)
+
+    importer = sub.add_parser("ingest-memanga", help="losslessly import already-downloaded MeManga chapter pages")
+    importer.add_argument("chapter_folder", type=Path)
+    importer.add_argument("--source-root", type=Path, required=True)
+    importer.add_argument("--series-id", required=True)
+    importer.add_argument("--chapter", type=int, required=True)
+    importer.add_argument("--reading-direction", choices=("rtl", "ltr"), default="rtl")
 
     workspace = sub.add_parser("workspace-init", help="prepare an AshenToons folder without deleting files")
     workspace.add_argument("directory", type=Path)
@@ -182,6 +191,10 @@ def main(argv=None):
             report = make_thumbnail(
                 args.source_root, args.panel, args.sha256,
                 args.output, args.headline, args.focus_x, args.focus_y)
+        elif args.command == "ingest-memanga":
+            report = ingest_memanga_chapter(args.source_root, args.chapter_folder,
+                                             args.series_id, args.chapter,
+                                             args.reading_direction)
         elif args.command == "workspace-init":
             report = initialize_workspace(args.directory)
         elif args.command == "narrate-script":
@@ -193,7 +206,7 @@ def main(argv=None):
                 _load_json(args.manifest), args.source_root, args.video,
                 args.part, args.output_dir, args.target_seconds, args.max_seconds)
         elif args.command == "tts-line":
-            report = synthesize(args.text, args.output, speed=args.speed)
+            report = synthesize(args.text, args.output, voice=args.voice, speed=args.speed)
         elif args.command == "probe":
             report = probe_media(args.file)
         elif args.command == "qc-decode":
