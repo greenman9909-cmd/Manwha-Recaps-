@@ -1,48 +1,97 @@
-# AshenToons Studio — Prototype v0.2
+# AshenToons Studio — v0.3 (local-first segment pipeline)
 
-Source-only manhwa recap production **validator**, not a working video generator.
+**A practical, fail-closed Python/FFmpeg toolkit for producing manhwa recap MP4s in short, reviewable parts.** Designed for GPT-6 planning and deterministic local execution. **No YouTube upload or autonomous editorial certification is claimed.**
 
-## What works
-- SHA-256 streamed file verification, safe source-path resolution, fail-closed manifests
-- MC voice exclusivity, speaker mapping, event and timeline validation
-- Strict source-authorization and no-subtitles/no-generated-visuals rules
-- Adversarial unit tests, CI matrix and packaging metadata
-- Certification placeholder **always refuses release**
+## Implemented
 
-## Run
+- Source-only panel verification: paths stay inside `--source-root`, expected SHA-256, source signatures.
+- Narration-first timing: **Kokoro-82M English Puck (`am_puck`)**, optional local TTS, SHA-addressed WAV reuse.
+- Required panel-to-narration notes: chapter, event, panel summary, match reason, narrative role.
+- **3–5 minute target parts** (240s target, 300s maximum; short final part allowed).
+- FFmpeg static/slow-zoom source-panel MP4 renderer, hash-keyed clip cache, stream-copy part assembly.
+- Independent ffprobe check and full FFmpeg decode of assembled video **and audio**.
+- Frame-by-frame editorial review snapshots, editable human review checklist, fail-closed release controls.
+- Truthful YouTube metadata drafts, default **private**.
+- **No added subtitles, no generated illustration assets, no automatic publication.**
+- Non-destructive `workspace-init` to prepare `D:\AshenToons`; **no delete or disk format feature**.
+- Python 3.10/3.12/3.13 CI including a real FFmpeg-generated media smoke test.
+
+## What this intentionally cannot certify
+
+Technical decoding does **not** verify that the spoken events match the artwork, that speech bubbles contain no text, that source reuse is licensed, or that a title/thumbnail is truthful. `certify` still **refuses release** until those independent checks are fully verified. The CLI does not post to YouTube. Only use assets that you have the right to use.
+
+## Install
+
+Prerequisites: Python 3.10+, **FFmpeg and ffprobe on PATH**. Windows PowerShell:
+
+```powershell
+python -m pip install -e .
+ashentoons --help
+ashentoons workspace-init "D:\AshenToons"
+```
+
+For optional **Kokoro-82M Puck** narration (may fetch model weights on first use):
+
+```powershell
+python -m pip install -e ".[tts]"
+```
+
+## Complete source → narration → parts → review workflow
+
+1. Place authorized source panels in `D:\AshenToons\sources`. Create a script based on [examples/episode-script.sample.json](examples/episode-script.sample.json), using relative panel names like `sources/ch01-panel01.png`.
+2. Hash each original panel with `ashentoons hash "D:\AshenToons\sources\ch01-panel01.png"` and paste the actual 64-character hash in the script. Script fields explicitly set `source_authorized: true` (this declaration is **not** license evidence), `subtitles: false`, `generated_visuals: false`.
+3. Generate all WAV clips and an audio-timed manifest with one reused Kokoro instance:
+
+```powershell
+ashentoons narrate-script "D:\AshenToons\manifests\script01.json" --source-root "D:\AshenToons" --output-manifest "D:\AshenToons\manifests\episode01.json"
+```
+
+4. Review manifest and plan:
+
+```powershell
+ashentoons validate "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons"
+ashentoons storyboard-audit "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons"
+ashentoons plan-parts "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons"
+```
+
+5. Render no-subtitle MP4 parts to `exports\episode01\part-001.mp4`, etc. Corrupt or mismatched narration/panels block rendering.
+
+```powershell
+ashentoons render-parts "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons" --output-dir "D:\AshenToons\exports\episode01"
+ashentoons qc-decode "D:\AshenToons\exports\episode01\part-001.mp4"
+```
+
+6. Extract actual video screenshots for the first part and create a blank independent human checklist. **Do not approve it without watching/listening to the MP4**.
+
+```powershell
+ashentoons review-frames "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons" --video "D:\AshenToons\exports\episode01\part-001.mp4" --part 1 --output-dir "D:\AshenToons\reviews\episode01-part01"
+ashentoons review-template "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons" --output "D:\AshenToons\reviews\episode01-review.json"
+ashentoons review-check "D:\AshenToons\reviews\episode01-review.json"
+```
+
+`review-check` fails until you fill **every** real shot/audio/continuity review. Even passing a review cannot override rights checks or automatically authorize public release.
+
+7. Draft honest SEO fields for later manual review/upload:
+
+```powershell
+ashentoons seo-draft "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons" --series "Your Manhwa Title" --title "Your Accurate English Recap Title" --output "D:\AshenToons\manifests\youtube01.json"
+```
+
+8. Transfer each MP4 to your phone or attach it in ChatGPT for per-part review when the transfer interface supports that file size. **This repository itself does not send chat attachments or upload to YouTube.**
+
+## Safety and disk space
+
+`workspace-init` only creates these folders: `sources`, `narration`, `exports`, `cache`, `temp`, `reviews`, `thumbnails`, `manifests`. It never wipes D: or deletes existing files. Keep source images, TTS lines, final MP4s, manifests and approved thumbnails. Treat **only deliberate temporary/cache files** as candidates for later cleanup.
+
+## Tests
+
 ```bash
+python -m pip install -e .
 python -m unittest discover -s tests -v
 ```
 
-## What is not built
-Actual panel OCR, story memory, humor, multi-voice TTS, FFmpeg rendering, audiovisual semantic QC, thumbnails, SEO, or YouTube publishing. See [architecture roadmap](docs/ARCHITECTURE.md).
+The real media smoke test requires FFmpeg. See [architecture](docs/ARCHITECTURE.md) and [related GitHub research](docs/UPSTREAM_RESEARCH.md).
 
-Use only panels you have permission to reuse. Do not publish without independent QC and explicit authorization.
+## Limitations / roadmap
 
-## CLI usage
-
-Install from the repository:
-```bash
-python -m pip install -e .
-ashentoons --help
-ashentoons hash projects/demo/source/panel.png
-ashentoons audit-source panel.png --source-root projects/demo/source --sha256 EXPECTED_64_CHAR_SHA256
-ashentoons validate projects/demo/episode.json --source-root projects/demo/source
-ashentoons certify projects/demo/episode.json --source-root projects/demo/source --render projects/demo/final.mp4
-```
-
-Exit code **0** means the requested preflight passed; **2** means failure/error/not certified. The `certify` command intentionally always refuses release until independent audiovisual QC is implemented. No graphical interface or GPU is required for the validator. Source authorization must be genuine, not merely a manifest flag.
-
-## Tomorrow's CLI smoke test (requires FFmpeg + ffprobe on PATH)
-
-```bash
-python -m pip install -e .
-python -m unittest discover -s tests -v
-ashentoons --help
-ashentoons render-clip panel.png speech.wav output/clip1.mp4 --source-root ./sources --duration 6
-ashentoons probe output/clip1.mp4
-ashentoons assemble output/episode.mp4 output/clip1.mp4 output/clip2.mp4
-ashentoons probe output/episode.mp4
-```
-
-Place your own **authorized** `panel.png` and `speech.wav` inside `sources/`; the renderer does not create either asset. Create a second compatible clip before assembly. The command is an executable rendering prototype, **not** an automated 60-minute production system. The stream-copy assembler rejects incompatible codec/dimension combinations but does not yet verify every codec parameter, full decoding, or semantic sync. Never auto-publish on a preflight PASS.
+Automated scene meaning verification, speech transcription/alignment, expressive multi-scene editing, thumbnail generation, YouTube OAuth upload, real channel analytics, trending-title A/B research, and independent release certification are **not implemented**. GPT-6 can help write and review story plans, but it is not magically running inside this local package and cannot replace editorial approval.
