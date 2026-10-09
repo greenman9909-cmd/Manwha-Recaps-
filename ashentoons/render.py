@@ -36,7 +36,7 @@ def render_clip(root: Path, panel: str, audio: str, output: Path,
                "-loop","1","-framerate","24","-i",str(source),"-i",str(narration),
                "-t",str(duration),"-vf",vf,"-r","24",
                "-c:v","libx264","-preset","veryfast","-crf","20",
-               "-c:a","aac","-b:a","160k","-ar","48000",
+               "-af","apad","-c:a","aac","-b:a","160k","-ar","48000",
                "-pix_fmt","yuv420p","-movflags","+faststart",str(tmp)]
     try:
         result = subprocess.run(command, capture_output=True, timeout=timeout, check=False)
