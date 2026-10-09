@@ -1,4 +1,4 @@
-# AshenToons Studio — v0.5 (local-first segment pipeline)
+# AshenToons Studio — v0.6 (local-first segment pipeline)
 
 **A practical, fail-closed Python/FFmpeg toolkit for producing manhwa recap MP4s in short, reviewable parts.** Designed for GPT-6 planning and deterministic local execution. **No public YouTube publishing or autonomous editorial certification is claimed.**
 
@@ -7,6 +7,7 @@
 - **Native MeManga chapter import:** lossless local pages with natural numbered order, decoding verification, SHA-256 provenance, RTL/LTR page metadata and resumable multi-chapter batch import. This does not trigger a web download.
 - Source-only panel verification: paths stay inside `--source-root`, expected SHA-256, source signatures.
 - Narration-first timing: optional local **Kokoro-82M English character cast**, with stable per-speaker voice mapping, MC-led narration and voice-separated SHA-addressed WAV reuse. Old Puck-only scripts still work.
+- **Optional Google AI Studio voices:** secure laptop-only key entry, read-only key validation, immutable per-voice WAV caching, bounded retry and API request caps, human approval for possible charges, and per-speaker Kokoro fallback. Fenrir remains MC by default. See [Google TTS setup](docs/GOOGLE_TTS.md).
 - Required panel-to-narration notes: chapter, event, panel summary, match reason, narrative role.
 - **3–5 minute target parts** (240s target, 300s maximum; short final part allowed).
 - FFmpeg static/slow-zoom source-panel MP4 renderer, hash-keyed clip cache, stream-copy part assembly.
