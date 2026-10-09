@@ -115,7 +115,7 @@ class ProductionTests(unittest.TestCase):
              patch("ashentoons.production.render_clip", side_effect=write_clip) as render, \
              patch("ashentoons.production.assemble", side_effect=assemble), \
              patch("ashentoons.production.probe_media", return_value=probe), \
-             patch("ashentoons.production.decode_check", return_value={"status": "PASS"}) as decode:
+             patch("ashentoons.production.decode_check", return_value={"status": "PASS", "duration": 20}) as decode:
             first = render_parts(one, self.root, self.root / "exports")
             self.assertEqual(first["status"], "PASS", first)
             self.assertEqual(render.call_count, 2)
