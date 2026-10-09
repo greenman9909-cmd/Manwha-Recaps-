@@ -164,7 +164,7 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
             shot = manifest["clips"][index]
             duration = shot["end"] - shot["start"]
             motion = shot.get("motion", "static")
-            if motion not in ("static", "zoom_in", "zoom_out") if isinstance(motion, str) else True:
+            if not isinstance(motion, str) or motion not in ("static", "zoom_in", "zoom_out"):
                 return {"status": "FAIL", "errors": [f"clip[{index}]: invalid camera motion"],
                         "completed_parts": reports}
             key_values = [RENDER_REVISION, shot["panel_sha256"],
