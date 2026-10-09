@@ -10,7 +10,7 @@ from PIL import Image
 
 from ashentoons.cli import main
 from ashentoons.core import file_hash
-from ashentoons.memanga_ingest import ingest_memanga_chapter
+from ashentoons.memanga_ingest import ingest_memanga_chapter, ingest_memanga_batch
 
 
 class MeMangaIngestTests(unittest.TestCase):
@@ -179,6 +179,54 @@ class MeMangaIngestTests(unittest.TestCase):
         result = self.ingest()
         self.assertEqual(result["status"], "FAIL")
         self.assertFalse((self.root / "sources").exists())
+
+
+    def test_batch_continues_after_missing_chapter_without_reimporting(self):
+        self.image("001.png")
+        second = self.incoming.parent / "Chapter 2"
+        second.mkdir()
+        Image.new("RGB", (400, 600), "red").save(second / "001.webp")
+        first = ingest_memanga_batch(self.root, self.incoming.parent,
+                                    "healing-magic", 1, 3)
+        self.assertEqual(first["status"], "FAIL")
+        self.assertEqual(first["next_required_chapter"], 3)
+        self.assertEqual(first["completed_chapters"], 2)
+        self.assertTrue((self.root / "sources/healing-magic/ch001/page-0001.png").exists())
+        self.assertTrue((self.root / "sources/healing-magic/ch002/page-0001.webp").exists())
+        third = self.incoming.parent / "Chapter 3"
+        third.mkdir()
+        Image.new("RGB", (400, 600), "blue").save(third / "001.png")
+        again = ingest_memanga_batch(self.root, self.incoming.parent,
+                                    "healing-magic", 1, 3)
+        self.assertEqual(again["status"], "PASS", again)
+        self.assertEqual(again["completed_chapters"], 3)
+        self.assertEqual(again["chapters_reused"], 2)
+        self.assertEqual(again["pages_imported"], 3)
+
+    def test_invalid_batch_span_rejected(self):
+        self.image("001.png")
+        for start, end in ((0, 2), (2, 1), (1, 100), (True, 3)):
+            with self.subTest(start=start, end=end):
+                report = ingest_memanga_batch(self.root, self.incoming.parent,
+                                              "healing-magic", start, end)
+                self.assertEqual(report["status"], "FAIL")
+
+    def test_changed_reading_direction_fails_on_reimport(self):
+        self.image("001.png")
+        initial = self.ingest(direction="rtl")
+        self.assertEqual(initial["status"], "PASS")
+        altered = self.ingest(direction="ltr")
+        self.assertEqual(altered["status"], "FAIL")
+
+    def test_cli_batch_import_chapters(self):
+        self.image("001.png")
+        report_code = main(["ingest-memanga-batch", str(self.incoming.parent),
+                            "--source-root", str(self.root),
+                            "--series-id", "healing-magic",
+                            "--start-chapter", "1", "--end-chapter", "1"])
+        self.assertEqual(report_code, 0)
+        self.assertTrue((self.root / "manifests/healing-magic/chapter-001-source.json").exists())
+
 
 
 if __name__ == "__main__":
