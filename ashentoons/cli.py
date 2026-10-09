@@ -4,6 +4,7 @@ import json
 import sys
 from pathlib import Path
 from .core import validate, audit_source_image, certify, file_hash
+from .media import probe_media
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="ashentoons", description="Fail-closed manhwa source preflight")
@@ -21,6 +22,8 @@ def main(argv=None):
     c.add_argument("manifest", type=Path)
     c.add_argument("--source-root", type=Path, required=True)
     c.add_argument("--render", type=Path, required=True)
+    p = sub.add_parser("probe", help="inspect rendered media streams with ffprobe")
+    p.add_argument("file", type=Path)
     args = parser.parse_args(argv)
     try:
         if args.command == "hash":
@@ -28,7 +31,9 @@ def main(argv=None):
                 raise ValueError("missing input file")
             print(file_hash(args.file))
             return 0
-        if args.command == "audit-source":
+        if args.command == "probe":
+            report = probe_media(args.file)
+        elif args.command == "audit-source":
             report = audit_source_image(args.source_root, args.image, args.sha256)
         else:
             if not args.manifest.is_file() or args.manifest.stat().st_size > 8 * 1024 * 1024:
