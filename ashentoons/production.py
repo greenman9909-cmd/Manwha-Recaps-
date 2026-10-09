@@ -17,6 +17,8 @@ from .assemble import assemble
 from .core import _safe_source, file_hash, validate
 from .media import probe_media
 from .render import render_clip
+from .storyboard import audit_storyboard
+from .qc import decode_check
 
 RENDER_REVISION = "ashentoons-static-panel-v1"
 
@@ -137,6 +139,9 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
     plan = plan_parts(manifest, source_root, target_seconds, max_seconds)
     if plan["status"] != "PASS":
         return plan
+    evidence = audit_storyboard(manifest)
+    if evidence["status"] != "PASS":
+        return {"status": "FAIL", "errors": evidence["errors"]}
     if type(width) is not int or type(height) is not int or not (
             320 <= width <= 3840 and 240 <= height <= 2160 and width % 2 == height % 2 == 0):
         return {"status": "FAIL", "errors": ["invalid output dimensions"]}
@@ -158,8 +163,12 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
         for index in part["clip_indices"]:
             shot = manifest["clips"][index]
             duration = shot["end"] - shot["start"]
+            motion = shot.get("motion", "static")
+            if motion not in ("static", "zoom_in", "zoom_out") if isinstance(motion, str) else True:
+                return {"status": "FAIL", "errors": [f"clip[{index}]: invalid camera motion"],
+                        "completed_parts": reports}
             key_values = [RENDER_REVISION, shot["panel_sha256"],
-                          shot["audio_sha256"], f"{duration:.6f}", str(width), str(height)]
+                          shot["audio_sha256"], f"{duration:.6f}", str(width), str(height), motion]
             cache_key = sha256("|".join(key_values).encode("utf-8")).hexdigest()[:20]
             clip_path = clip_dir / f"shot-{index:05d}-{cache_key}.mp4"
             cached = False
@@ -169,7 +178,7 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
                           and info["height"] == height and abs(info["duration"] - duration) <= 0.35)
             if not cached:
                 result = render_clip(source_root, shot["panel"], shot["audio"],
-                                     clip_path, duration, width, height)
+                                     clip_path, duration, width, height, motion=motion)
                 if result["status"] != "PASS":
                     return {"status": "FAIL", "errors": [f"clip[{index}]: render failed"],
                             "detail": result, "completed_parts": reports}
@@ -186,6 +195,13 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
         if result["status"] != "PASS":
             return {"status": "FAIL", "errors": [f"part {part['part']}: assembly failed"],
                     "detail": result, "completed_parts": reports}
+        decoded = decode_check(destination, sum(
+            manifest["clips"][i]["end"] - manifest["clips"][i]["start"]
+            for i in part["clip_indices"]))
+        if decoded["status"] != "PASS":
+            destination.unlink(missing_ok=True)
+            return {"status": "FAIL", "errors": [f"part {part['part']}: failed complete AV decode"],
+                    "detail": decoded, "completed_parts": reports}
         reports.append({"part": part["part"], "path": str(destination),
                         "duration": result["duration"], "sha256": result["sha256"],
                         "clip_indices": part["clip_indices"]})
