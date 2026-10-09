@@ -33,7 +33,7 @@ def audit_storyboard(manifest: dict) -> dict:
         if type(chapter) is not int or chapter < 1 or chapter > 100000:
             errors.append(f"clip[{i}]: positive integer chapter required")
         role = clip.get("narrative_role")
-        if role not in ROLES if isinstance(role, str) else True:
+        if not isinstance(role, str) or role not in ROLES:
             errors.append(f"clip[{i}]: invalid narrative_role")
     return {
         "status": "FAIL" if errors else "PASS",
