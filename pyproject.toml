@@ -16,6 +16,8 @@ tts = [
     "soundfile>=0.12,<1",
 ]
 
+images = ["Pillow>=10.2,<13"]
+
 [project.scripts]
 ashentoons = "ashentoons.cli:main"
 
