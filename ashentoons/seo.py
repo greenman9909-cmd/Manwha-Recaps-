@@ -47,7 +47,7 @@ def seo_draft(manifest: dict, root, series: str, title: str,
     description = [
         f"{series.strip()} — English manhwa recap with original commentary.",
         "",
-        "Every illustrated scene uses an authorized source panel.",
+        "Scenes use supplied source panels; verify reuse permissions before publication.",
         "Edited in short parts by AshenToons. No added subtitles.",
     ]
     if chapter_lines:
@@ -58,7 +58,6 @@ def seo_draft(manifest: dict, root, series: str, title: str,
         "title": title.strip(), "description": "\n".join(description),
         "tags": list(dict.fromkeys(t.strip() for t in tags)),
         "categoryId": "24", "privacyStatus": "private",
-        "containsSyntheticMedia": False,
         "captions": False,
         "manual_upload_required": True,
         "release_authorized": False,
