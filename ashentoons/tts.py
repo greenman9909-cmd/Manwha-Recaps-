@@ -14,6 +14,14 @@ import tempfile
 from .core import file_hash
 
 VOICE = "am_puck"
+# Fixed allowlist of official English Kokoro speaker IDs. The voice is
+# selected by the script's stable character registry, never from a URL.
+SUPPORTED_VOICES = frozenset({
+    "am_puck", "am_fenrir", "am_michael", "am_adam", "am_onyx",
+    "am_echo", "am_eric", "am_liam",
+    "af_heart", "af_bella", "af_nicole", "af_sarah", "af_sky",
+    "af_nova", "af_jessica", "af_river", "af_alloy",
+})
 SAMPLE_RATE = 24000
 
 
@@ -23,8 +31,8 @@ def synthesize(text: str, output: Path, voice: str = VOICE,
     if (not isinstance(text, str) or not text.strip() or len(text) > 1800
             or "\x00" in text):
         return {"status": "FAIL", "errors": ["text must be 1–1800 characters"]}
-    if not isinstance(voice, str) or voice != VOICE:
-        return {"status": "FAIL", "errors": ["voice locked to Kokoro am_puck"]}
+    if not isinstance(voice, str) or voice not in SUPPORTED_VOICES:
+        return {"status": "FAIL", "errors": ["voice must be an approved English Kokoro speaker ID"]}
     if (type(speed) not in (float, int) or not math.isfinite(speed)
             or not 0.75 <= speed <= 1.25):
         return {"status": "FAIL", "errors": ["invalid speech speed"]}
@@ -65,7 +73,7 @@ def synthesize(text: str, output: Path, voice: str = VOICE,
         if output.exists():
             return {"status": "FAIL", "errors": ["audio file appeared during generation; refusing overwrite"]}
         os.replace(temp, output)
-        return {"status": "PASS", "path": str(output), "voice": VOICE,
+        return {"status": "PASS", "path": str(output), "voice": voice,
                 "duration": round(seconds, 3), "sha256": file_hash(output),
                 "sample_rate": SAMPLE_RATE,
                 "note": "TTS generated; does not certify pronunciation or narration accuracy"}
