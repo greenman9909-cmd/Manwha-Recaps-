@@ -20,6 +20,7 @@ from .tts import synthesize
 from .narrate import narrate_script
 from .review_frames import extract_review_frames
 from .workspace import initialize_workspace
+from .thumbnail import make_thumbnail
 
 
 def _load_json(path: Path) -> dict:
@@ -137,6 +138,15 @@ def main(argv=None):
     workspace = sub.add_parser("workspace-init", help="prepare an AshenToons folder without deleting files")
     workspace.add_argument("directory", type=Path)
 
+    thumb = sub.add_parser("thumbnail", help="source-only JPG draft thumbnail from one authorized panel")
+    thumb.add_argument("panel")
+    thumb.add_argument("--source-root", type=Path, required=True)
+    thumb.add_argument("--sha256", required=True)
+    thumb.add_argument("--headline", required=True)
+    thumb.add_argument("--output", type=Path, required=True)
+    thumb.add_argument("--focus-x", type=float, default=0.5)
+    thumb.add_argument("--focus-y", type=float, default=0.4)
+
     args = parser.parse_args(argv)
     try:
         if args.command == "hash":
@@ -150,6 +160,10 @@ def main(argv=None):
             report = render_clip(args.source_root, args.panel, args.audio,
                                  args.output, args.duration, args.width,
                                  args.height, motion=args.motion)
+        elif args.command == "thumbnail":
+            report = make_thumbnail(
+                args.source_root, args.panel, args.sha256,
+                args.output, args.headline, args.focus_x, args.focus_y)
         elif args.command == "workspace-init":
             report = initialize_workspace(args.directory)
         elif args.command == "narrate-script":
