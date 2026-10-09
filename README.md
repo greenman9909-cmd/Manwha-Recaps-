@@ -1,9 +1,10 @@
-# AshenToons Studio — v0.4 candidate (local-first segment pipeline)
+# AshenToons Studio — v0.5 (local-first segment pipeline)
 
 **A practical, fail-closed Python/FFmpeg toolkit for producing manhwa recap MP4s in short, reviewable parts.** Designed for GPT-6 planning and deterministic local execution. **No public YouTube publishing or autonomous editorial certification is claimed.**
 
 ## Implemented
 
+- **Native MeManga chapter import:** lossless local pages with natural numbered order, decoding verification, SHA-256 provenance, RTL/LTR page metadata and resumable multi-chapter batch import. This does not trigger a web download.
 - Source-only panel verification: paths stay inside `--source-root`, expected SHA-256, source signatures.
 - Narration-first timing: optional local **Kokoro-82M English character cast**, with stable per-speaker voice mapping, MC-led narration and voice-separated SHA-addressed WAV reuse. Old Puck-only scripts still work.
 - Required panel-to-narration notes: chapter, event, panel summary, match reason, narrative role.
@@ -36,6 +37,24 @@ For optional **Kokoro-82M English cast** narration (may fetch model weights on f
 ```powershell
 python -m pip install -e ".[tts,images,youtube]"
 ```
+
+## Fast local MeManga → AshenToons import (no manual file copying)
+
+After MeManga has created a local chapter folder, use:
+
+~~~powershell
+ashentoons ingest-memanga "D:\AshenToons\temp\memanga-downloads\The Wrong Way to Use Healing Magic\Chapter 1" --source-root "D:\AshenToons" --series-id healing-magic --chapter 1 --reading-direction rtl
+~~~
+
+For a whole locally downloaded title's numbered chapter folders:
+
+~~~powershell
+ashentoons ingest-memanga-batch "D:\AshenToons\temp\memanga-downloads\The Wrong Way to Use Healing Magic" --source-root "D:\AshenToons" --series-id healing-magic --start-chapter 1 --end-chapter 12 --reading-direction rtl
+~~~
+
+The input folders must already exist. Image files are copied **without transcoding**, page hashes are verified, unchanged chapters are reused and nothing existing is overwritten. Chapter manifests are stored under `manifests/healing-magic`. A single project-level user authorization declaration is recorded with the imported material; a new permission prompt is not required for each chapter. RTL means panel/bubble reading order within each manga page, **not reversing the page sequence**. See the [MeManga integration guide](docs/MEMANGA_IMPORT.md).
+
+Cast audition now supports `ashentoons tts-line "Dialogue" out.wav --voice am_fenrir` in addition to the multi-character storyboard registry.
 
 ## Complete source → narration → parts → review workflow
 
