@@ -31,7 +31,7 @@ authorized JPG/PNG/WEBP + owner-provided SHA-256
              |
  reviewer frame JPEGs + human review JSON (all fields initially pending)
              |
-  truthful private YouTube metadata JSON
+  truthful private YouTube metadata JSON + optional authorized-panel thumbnail draft
              |
         HUMAN release decision (no auto uploader)
 ```
@@ -65,7 +65,7 @@ An input manifest used for rendering includes `voices: {"MC":"am_puck"}`, each s
 
 ## Remaining engineering work
 
-Audio text-to-speech transcription cross-check; independently test panel/story meaning with actual visual context; robust published-video certification; YouTube OAuth upload with explicit user approval; browser/GitHub integration; dynamic expressive effects; thumbnail creator; analytics-driven content research. These are not faked by changing flags.
+Audio text-to-speech transcription cross-check; independently test panel/story meaning with actual visual context; robust published-video certification; YouTube OAuth upload with explicit user approval; browser/GitHub integration; dynamic expressive effects; advanced thumbnail testing; analytics-driven content research. These are not faked by changing flags.
 
 ## Upstream comparison
 
