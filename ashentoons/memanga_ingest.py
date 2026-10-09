@@ -206,3 +206,49 @@ def ingest_memanga_chapter(source_root: Path, chapter_folder: Path,
         }
     except (OSError, ValueError) as exc:
         return _fail("chapter import failed: " + str(exc)[:180])
+
+
+def ingest_memanga_batch(source_root: Path, manga_folder: Path, series_id: str,
+                         first_chapter: int, last_chapter: int,
+                         reading_direction: str = "rtl") -> dict:
+    """Import Chapter 1, Chapter 2, ... directories from one local MeManga title.
+
+    Fail fast and report the exact missing chapter. Previously imported source
+    folders remain intact; this is resumable without overwriting pages.
+    """
+    if (not isinstance(manga_folder, Path) or manga_folder.is_symlink()
+            or not isinstance(series_id, str) or not _SERIES.fullmatch(series_id)
+            or type(first_chapter) is not int or type(last_chapter) is not int
+            or not 1 <= first_chapter <= last_chapter <= 100000
+            or last_chapter - first_chapter >= 48
+            or reading_direction not in ("rtl", "ltr")):
+        return _fail("invalid MeManga batch parameters")
+    try:
+        if not manga_folder.is_dir() or manga_folder.is_symlink():
+            return _fail("MeManga manga folder does not exist")
+    except OSError as exc:
+        return _fail("cannot read manga folder: " + str(exc)[:140])
+    output = []
+    for chapter in range(first_chapter, last_chapter + 1):
+        input_dir = manga_folder / f"Chapter {chapter}"
+        result = ingest_memanga_chapter(
+            source_root, input_dir, series_id, chapter, reading_direction)
+        output.append({"chapter": chapter, **result})
+        if result["status"] != "PASS":
+            return {
+                "status": "FAIL",
+                "errors": [f"chapter {chapter}: " + "; ".join(result.get("errors", []))],
+                "completed_chapters": sum(x["status"] == "PASS" for x in output),
+                "next_required_chapter": chapter,
+                "chapters": output,
+                "ready_to_publish": False,
+            }
+    return {
+        "status": "PASS",
+        "completed_chapters": len(output),
+        "chapters_reused": sum(bool(x.get("reused")) for x in output),
+        "pages_imported": sum(x["pages_imported"] for x in output),
+        "chapters": output,
+        "ready_to_publish": False,
+        "note": "Local chapter pages imported; story review and render still pending",
+    }
