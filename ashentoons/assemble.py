@@ -20,7 +20,7 @@ def assemble(clips: list[Path], output: Path, timeout: int = 3600) -> dict:
     probes = [probe_media(p) for p in clips]
     if any(p["status"] != "PASS" for p in probes):
         return {"status":"FAIL","errors":["input media preflight failed"]}
-    codecs = {(p["video_codec"], p["audio_codec"]) for p in probes}
+    codecs = {(p["video_codec"], p["audio_codec"], p["width"], p["height"]) for p in probes}
     if len(codecs) != 1:
         return {"status":"FAIL","errors":["incompatible codecs"]}
     output.parent.mkdir(parents=True, exist_ok=True)
