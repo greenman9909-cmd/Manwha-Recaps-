@@ -65,7 +65,15 @@ class HardeningTests(unittest.TestCase):
         outside=Path(self.temp.name).parent/'ashentoons-outside-test.txt'
         try:
             outside.write_bytes(b'outside')
-            (self.root/'escape.png').symlink_to(outside)
+            try:
+                (self.root/'escape.png').symlink_to(outside)
+            except OSError as exc:
+                # Standard Windows sessions can deny symlink creation without
+                # Developer Mode or administrator privileges (WinError 1314).
+                # This is an OS test-fixture restriction, not a source-path PASS.
+                if getattr(exc, 'winerror', None) == 1314:
+                    self.skipTest('Windows symlink privilege is unavailable')
+                raise
             self.fail_case(lambda m: m['clips'][0].update(panel='escape.png',panel_sha256=file_hash(outside)))
         finally:
             outside.unlink(missing_ok=True)
