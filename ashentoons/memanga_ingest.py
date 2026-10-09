@@ -56,7 +56,8 @@ def _verify_image(path: Path) -> tuple[int, int]:
 
 
 def _verify_existing(ledger: Path, pages: list[dict],
-                     target_dir: Path, source_root: Path) -> dict:
+                     target_dir: Path, source_root: Path,
+                     reading_direction: str) -> dict:
     """A repeated import is allowed only when source and output match exactly."""
     try:
         with ledger.open("r", encoding="utf-8") as stream:
@@ -69,6 +70,8 @@ def _verify_existing(ledger: Path, pages: list[dict],
     try:
         if record.get("series_id") != target_dir.parent.name:
             return _fail("existing chapter belongs to another series")
+        if record.get("reading_direction") != reading_direction:
+            return _fail("existing chapter has a different reading direction")
         for expected, saved in zip(pages, found):
             if not isinstance(saved, dict):
                 return _fail("invalid saved page record")
@@ -157,7 +160,7 @@ def ingest_memanga_chapter(source_root: Path, chapter_folder: Path,
         if report_path.exists() or report_path.is_symlink():
             if report_path.is_symlink():
                 return _fail("existing manifest symlink forbidden")
-            return _verify_existing(report_path, pages, dest_dir, root)
+            return _verify_existing(report_path, pages, dest_dir, root, reading_direction)
         if dest_dir.exists() or dest_dir.is_symlink():
             return _fail("chapter output already exists without a matching import report")
         dest_dir.parent.mkdir(parents=True, exist_ok=True)
