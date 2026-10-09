@@ -21,6 +21,7 @@ from .narrate import narrate_script
 from .review_frames import extract_review_frames
 from .workspace import initialize_workspace
 from .thumbnail import make_thumbnail
+from .youtube import upload_private_draft
 
 
 def _load_json(path: Path) -> dict:
@@ -149,6 +150,16 @@ def main(argv=None):
     thumb.add_argument("--focus-x", type=float, default=0.5)
     thumb.add_argument("--focus-y", type=float, default=0.4)
 
+    upload = sub.add_parser("upload-private", help="upload a PRIVATE YouTube draft after OAuth and explicit confirmation")
+    upload.add_argument("video", type=Path)
+    upload.add_argument("--metadata", type=Path, required=True)
+    upload.add_argument("--client-secrets", type=Path, required=True)
+    upload.add_argument("--token-file", type=Path, required=True)
+    upload.add_argument("--receipt", type=Path, required=True)
+    upload.add_argument("--made-for-kids", choices=("yes", "no"), required=True)
+    upload.add_argument("--thumbnail", type=Path, default=None)
+    upload.add_argument("--confirm-private-upload", action="store_true")
+
     args = parser.parse_args(argv)
     try:
         if args.command == "hash":
@@ -162,6 +173,11 @@ def main(argv=None):
             report = render_clip(args.source_root, args.panel, args.audio,
                                  args.output, args.duration, args.width,
                                  args.height, motion=args.motion)
+        elif args.command == "upload-private":
+            report = upload_private_draft(
+                args.video, _load_json(args.metadata), args.client_secrets,
+                args.token_file, args.receipt, args.made_for_kids == "yes",
+                args.confirm_private_upload, args.thumbnail)
         elif args.command == "thumbnail":
             report = make_thumbnail(
                 args.source_root, args.panel, args.sha256,
