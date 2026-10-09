@@ -13,12 +13,14 @@ from .core import _safe_source, file_hash
 
 def render_clip(root: Path, panel: str, audio: str, output: Path,
                 duration: float, width: int = 1280, height: int = 720,
-                timeout: int = 180) -> dict:
+                timeout: int = 180, motion: str = "static") -> dict:
     """Render one image+audio clip atomically; reject unsafe paths and partial output."""
     if type(duration) not in (int, float) or not math.isfinite(duration) or not (0.1 <= duration <= 30):
         return {"status":"FAIL","errors":["duration outside 0.1–30 seconds"]}
     if type(width) is not int or type(height) is not int or width < 320 or height < 240 or width > 3840 or height > 2160 or width % 2 or height % 2:
         return {"status":"FAIL","errors":["invalid output dimensions"]}
+    if not isinstance(motion, str) or motion not in ("static", "zoom_in", "zoom_out"):
+        return {"status": "FAIL", "errors": ["unsupported camera motion"]}
     source = _safe_source(root, panel)
     narration = _safe_source(root, audio)
     if source is None or narration is None:
@@ -32,6 +34,14 @@ def render_clip(root: Path, panel: str, audio: str, output: Path,
     os.close(fd)
     tmp = Path(name)
     vf = f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p"
+    if motion != "static":
+        # Slow, centered Ken Burns zoom using only source pixels.
+        # Start with a letterboxed canvas so portrait panels are not distorted.
+        zoom = ("min(zoom+0.00042,1.09)" if motion == "zoom_in"
+                else "if(eq(on,0),1.09,max(zoom-0.00042,1.0))")
+        vf += (f",zoompan=z='{zoom}':x='iw/2-iw/zoom/2'"
+               f":y='ih/2-ih/zoom/2':d=1:s={width}x{height}:fps=24,"
+               "format=yuv420p")
     command = ["ffmpeg","-nostdin","-hide_banner","-loglevel","error","-y",
                "-loop","1","-framerate","24","-i",str(source),"-i",str(narration),
                "-t",str(duration),"-vf",vf,"-r","24",
