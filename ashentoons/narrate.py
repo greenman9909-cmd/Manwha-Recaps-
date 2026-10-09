@@ -89,9 +89,13 @@ def narrate_script(script: dict, source_root: Path, output_manifest: Path,
             f"{CACHE_REVISION}|{speed}|{text}".encode("utf-8")).hexdigest()[:32]
         audio_file = audio_folder / f"line-{digest}.wav"
         probed = None
-        if audio_file.is_file() and not audio_file.is_symlink():
+        if audio_file.exists() or audio_file.is_symlink():
+            if audio_file.is_symlink() or not audio_file.is_file():
+                return {"status": "FAIL", "errors": [f"clip[{i}]: unsafe cached audio file"]}
             probed = probe_audio(audio_file)
-        if not probed or probed.get("status") != "PASS":
+            if probed.get("status") != "PASS":
+                return {"status": "FAIL", "errors": [f"clip[{i}]: corrupt cached audio; preserve and inspect file"]}
+        if not probed:
             if pipeline is None:
                 try:
                     from kokoro import KPipeline
