@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from .core import validate, audit_source_image, certify, file_hash
 from .media import probe_media
+from .render import render_clip
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="ashentoons", description="Fail-closed manhwa source preflight")
@@ -24,6 +25,14 @@ def main(argv=None):
     c.add_argument("--render", type=Path, required=True)
     p = sub.add_parser("probe", help="inspect rendered media streams with ffprobe")
     p.add_argument("file", type=Path)
+    render = sub.add_parser("render-clip", help="render authorized panel + existing narration audio")
+    render.add_argument("panel")
+    render.add_argument("audio")
+    render.add_argument("output", type=Path)
+    render.add_argument("--source-root", type=Path, required=True)
+    render.add_argument("--duration", type=float, required=True)
+    render.add_argument("--width", type=int, default=1280)
+    render.add_argument("--height", type=int, default=720)
     args = parser.parse_args(argv)
     try:
         if args.command == "hash":
@@ -31,7 +40,10 @@ def main(argv=None):
                 raise ValueError("missing input file")
             print(file_hash(args.file))
             return 0
-        if args.command == "probe":
+        if args.command == "render-clip":
+            report = render_clip(args.source_root, args.panel, args.audio, args.output,
+                                 args.duration, args.width, args.height)
+        elif args.command == "probe":
             report = probe_media(args.file)
         elif args.command == "audit-source":
             report = audit_source_image(args.source_root, args.image, args.sha256)
