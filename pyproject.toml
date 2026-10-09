@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ashentoons-studio"
-version = "0.5.0"
+version = "0.6.0"
 description = "Source-only manhwa recap segment production with fail-closed editorial QC"
 requires-python = ">=3.10"
 dependencies = []

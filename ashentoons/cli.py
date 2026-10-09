@@ -17,6 +17,8 @@ from .storyboard import audit_storyboard, review_template, check_review
 from .qc import decode_check
 from .seo import seo_draft
 from .tts import synthesize, VOICE, SUPPORTED_VOICES
+from .gemini_tts import synthesize_google, credential_ready, GOOGLE_VOICES, SUPPORTED_GOOGLE_MODELS, GOOGLE_MODEL
+from .voice_batch import batch_narrate_google
 from .narrate import narrate_script
 from .review_frames import extract_review_frames
 from .workspace import initialize_workspace
@@ -124,6 +126,25 @@ def main(argv=None):
     tts.add_argument("--speed", type=float, default=1.0)
     tts.add_argument("--voice", default=VOICE, choices=sorted(SUPPORTED_VOICES))
 
+    google_status = sub.add_parser("google-voice-status", help="report key configured status only; never show credentials")
+
+    google = sub.add_parser("tts-google", help="optional Google AI Studio TTS; MAY incur separate API charges")
+    google.add_argument("text", help="one authored spoken line, <=400 characters")
+    google.add_argument("output", type=Path)
+    google.add_argument("--voice", default="Gacrux", choices=sorted(GOOGLE_VOICES))
+    google.add_argument("--model", default=GOOGLE_MODEL, choices=sorted(SUPPORTED_GOOGLE_MODELS))
+    google.add_argument("--style", default="speak naturally, with clear cinematic storytelling")
+    google.add_argument("--confirm-possible-api-charges", action="store_true", help="explicitly authorize Google API use")
+
+    google_batch = sub.add_parser("voice-batch-google", help="generate <=12 approved Google TTS lines per run, with per-character casting and immutable cache")
+    google_batch.add_argument("script", type=Path)
+    google_batch.add_argument("--output-dir", type=Path, required=True)
+    google_batch.add_argument("--output-manifest", type=Path, required=True)
+    google_batch.add_argument("--max-new-requests", type=int, default=12)
+    google_batch.add_argument("--model", default=GOOGLE_MODEL, choices=sorted(SUPPORTED_GOOGLE_MODELS))
+    google_batch.add_argument("--confirm-possible-api-charges", action="store_true")
+    google_batch.add_argument("--fallback-kokoro", action="store_true")
+
     script = sub.add_parser("narrate-script", help="generate WAV clips and timed manifest with Kokoro")
     script.add_argument("script", type=Path)
     script.add_argument("--source-root", type=Path, required=True)
@@ -219,6 +240,23 @@ def main(argv=None):
                 args.part, args.output_dir, args.target_seconds, args.max_seconds)
         elif args.command == "tts-line":
             report = synthesize(args.text, args.output, voice=args.voice, speed=args.speed)
+        elif args.command == "google-voice-status":
+            report = {"status": "PASS", "google_key_configured": credential_ready(),
+                      "default_model": GOOGLE_MODEL,
+                      "note": "No network request; billing belongs to Google API project"}
+        elif args.command == "tts-google":
+            if not args.confirm_possible_api_charges:
+                report = {"status": "BLOCKED", "errors": [
+                    "Add --confirm-possible-api-charges to authorize Google API generation"]}
+            else:
+                report = synthesize_google(args.text, args.output, voice=args.voice,
+                                           model=args.model, style=args.style)
+        elif args.command == "voice-batch-google":
+            report = batch_narrate_google(_load_json(args.script), args.output_dir,
+                                          args.output_manifest, model=args.model,
+                                          max_new_requests=args.max_new_requests,
+                                          approve_api_charges=args.confirm_possible_api_charges,
+                                          fallback_to_kokoro=args.fallback_kokoro)
         elif args.command == "probe":
             report = probe_media(args.file)
         elif args.command == "qc-decode":
