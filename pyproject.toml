@@ -17,6 +17,7 @@ tts = [
 ]
 
 images = ["Pillow>=10.2,<13"]
+youtube = ["google-api-python-client>=2.100,<3", "google-auth-oauthlib>=1.2,<2", "google-auth-httplib2>=0.2,<1"]
 
 [project.scripts]
 ashentoons = "ashentoons.cli:main"
