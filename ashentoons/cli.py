@@ -6,6 +6,7 @@ from pathlib import Path
 from .core import validate, audit_source_image, certify, file_hash
 from .media import probe_media
 from .render import render_clip
+from .assemble import assemble
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="ashentoons", description="Fail-closed manhwa source preflight")
@@ -33,6 +34,9 @@ def main(argv=None):
     render.add_argument("--duration", type=float, required=True)
     render.add_argument("--width", type=int, default=1280)
     render.add_argument("--height", type=int, default=720)
+    episode = sub.add_parser("assemble", help="assemble pre-rendered MP4 clips using stream copy")
+    episode.add_argument("output", type=Path)
+    episode.add_argument("clips", type=Path, nargs="+")
     args = parser.parse_args(argv)
     try:
         if args.command == "hash":
@@ -40,7 +44,9 @@ def main(argv=None):
                 raise ValueError("missing input file")
             print(file_hash(args.file))
             return 0
-        if args.command == "render-clip":
+        if args.command == "assemble":
+            report = assemble(args.clips, args.output)
+        elif args.command == "render-clip":
             report = render_clip(args.source_root, args.panel, args.audio, args.output,
                                  args.duration, args.width, args.height)
         elif args.command == "probe":
