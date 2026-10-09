@@ -47,7 +47,7 @@ refuses requests until you explicitly add the approval flag.
 Optional batch usage for **existing, verified story lines only**:
 
 ~~~powershell
-& "D:\AshenToons\tools\.venv-memanga\Scripts\python.exe" -m ashentoons.cli voice-batch-google "D:\AshenToons\projects\healing-magic-001\approved-lines.json" --output-dir "D:\AshenToons\projects\healing-magic-001\google-audio" --output-manifest "D:\AshenToons\projects\healing-magic-001\voice-report-01.json" --max-new-requests 12 --confirm-possible-api-charges --fallback-kokoro
+& "C:\Users\green\Documents\Manhwa-Recap-Studio\.venv-kokoro\Scripts\python.exe" -m ashentoons.cli voice-batch-google "D:\AshenToons\projects\healing-magic-001\approved-lines.json" --output-dir "D:\AshenToons\projects\healing-magic-001\google-audio" --output-manifest "D:\AshenToons\projects\healing-magic-001\voice-report-01.json" --max-new-requests 12 --confirm-possible-api-charges --fallback-kokoro
 ~~~
 
 **Do not invent \`approved-lines.json\`:** it is created later by the
