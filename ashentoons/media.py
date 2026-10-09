@@ -1,5 +1,6 @@
 """Bounded ffprobe inspection; not a semantic audiovisual certification."""
 import json
+import math
 import subprocess
 from pathlib import Path
 
@@ -20,7 +21,7 @@ def probe_media(path: Path, timeout: float = 30) -> dict:
         data = json.loads(proc.stdout)
         streams = data["streams"]
         duration = float(data["format"]["duration"])
-        if not (0 < duration < 86400):
+        if not (math.isfinite(duration) and 0 < duration < 86400):
             raise ValueError("invalid duration")
         video = [x for x in streams if x.get("codec_type") == "video"]
         audio = [x for x in streams if x.get("codec_type") == "audio"]
