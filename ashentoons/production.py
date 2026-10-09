@@ -202,7 +202,7 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
                     "completed_parts": reports}
             reports.append({
                 "part": part["part"], "path": str(destination),
-                "duration": verified["duration"],
+                "duration": verified.get("duration", previous.get("duration", expected)),
                 "sha256": recorded_sha,
                 "clip_indices": part["clip_indices"], "reused": True,
             })
