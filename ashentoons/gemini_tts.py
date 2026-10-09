@@ -55,6 +55,15 @@ _API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
 FLOW_KEY = Path.home() / ".flow-mcp" / "gemini-key"
 
 
+def _plausible_key(value: str) -> bool:
+    """Permit provider-issued opaque keys without guessing their prefix.
+
+    Reject whitespace, controls, delimiters and unreasonably long values.
+    Google is the authority on validity, via the read-only models endpoint.
+    """
+    return isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_.-]{20,256}", value) is not None
+
+
 def credential_ready() -> bool:
     """Status only; never return or log the key."""
     return bool(_load_key())
@@ -67,12 +76,12 @@ def _load_key() -> str | None:
             candidate = FLOW_KEY.read_text(encoding="utf-8").strip()
         except OSError:
             return None
-    return candidate if re.fullmatch(r"AIza[A-Za-z0-9_-]{30,}", candidate) else None
+    return candidate if _plausible_key(candidate) else None
 
 
 def validate_key(key: str, opener=None, timeout: int = 12) -> tuple[bool, str]:
     """Read-only model listing; no speech generation and no Flow credits."""
-    if not isinstance(key, str) or not re.fullmatch(r"AIza[A-Za-z0-9_-]{30,}", key.strip()):
+    if not isinstance(key, str) or not _plausible_key(key.strip()):
         return False, "Invalid API key format"
     fn = opener or urllib.request.urlopen
     req = urllib.request.Request(
@@ -211,7 +220,7 @@ def synthesize_google(
     key = api_key if api_key is not None else _load_key()
     if not key:
         return {"status": "BLOCKED", "errors": ["Google API key not configured on this computer"]}
-    if not re.fullmatch(r"AIza[A-Za-z0-9_-]{30,}", key):
+    if not _plausible_key(key):
         return {"status": "BLOCKED", "errors": ["Invalid locally configured Google API key"]}
     fn = opener or urllib.request.urlopen
     req=urllib.request.Request(

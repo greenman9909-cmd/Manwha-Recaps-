@@ -16,6 +16,13 @@ using a read-only Google models query and then stored in:
 
 \`C:\Users\green\.flow-mcp\gemini-key\`
 
+**Google now issues Auth keys beginning with \`AQ.\` as well as legacy
+\`AIza\` Standard keys.** AshenToons accepts either plausible format;
+Google's API itself makes the final validity decision. See the
+[official Gemini key guidance](https://ai.google.dev/gemini-api/docs/api-key).
+If a credential was pasted into a conversation or public location, revoke
+it in AI Studio and create a replacement before connecting it here.
+
 The key file is restricted to the user's Windows account via \`icacls\`.
 This is the same key location understood by the optional
 [GTAI-1/flow-mcp](https://github.com/GTAI-1/flow-mcp) package, so setting

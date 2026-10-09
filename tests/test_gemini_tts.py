@@ -72,6 +72,28 @@ class GoogleTTSContractTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(attempts,[])
 
+    def test_opaque_non_aiza_prefix_is_deferred_to_google(self):
+        # Synthetic, deliberately fake credential; never sent over the network.
+        fake_opaque = "AQ." + "Z" * 43
+        requests = []
+        def opener(req, timeout=12):
+            requests.append(req)
+            return DummyResponse({"models": [{"name": "models/example"}]})
+        ok, reason = validate_key(fake_opaque, opener=opener)
+        self.assertTrue(ok, reason)
+        self.assertEqual(requests[0].get_header("X-goog-api-key"), fake_opaque)
+        self.assertNotIn(fake_opaque, requests[0].full_url)
+
+    def test_long_or_unsafe_key_rejected_without_network(self):
+        invalid = ["X" * 257, "A" * 15, "AQ." + "A" * 10 + chr(10) + "A" * 25,
+                   "AQ." + "A" * 34 + ";", "AQ." + "A" * 10 + " " + "A" * 25]
+        for candidate in invalid:
+            with self.subTest(length=len(candidate)):
+                attempts = []
+                ok, reason = validate_key(candidate, opener=lambda *a, **kw: attempts.append(1))
+                self.assertFalse(ok)
+                self.assertEqual(attempts, [])
+
     def test_key_not_configured_no_network_call(self):
         with patch("ashentoons.gemini_tts._load_key",return_value=None):
             result=synthesize_google("Testing voice",self.output)
