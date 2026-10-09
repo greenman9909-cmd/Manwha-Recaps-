@@ -11,7 +11,7 @@
 - FFmpeg static/slow-zoom source-panel MP4 renderer, hash-keyed clip cache, stream-copy part assembly.
 - Independent ffprobe check and full FFmpeg decode of assembled video **and audio**.
 - Frame-by-frame editorial review snapshots, editable human review checklist, fail-closed release controls.
-- Truthful YouTube metadata drafts, default **private**.
+- Truthful YouTube metadata drafts, default **private**; optional 1280×720 JPEG thumbnail generation from an authorized source image.
 - **No added subtitles, no generated illustration assets, no automatic publication.**
 - Non-destructive `workspace-init` to prepare `D:\AshenToons`; **no delete or disk format feature**.
 - Python 3.10/3.12/3.13 CI including a real FFmpeg-generated media smoke test.
@@ -33,7 +33,7 @@ ashentoons workspace-init "D:\AshenToons"
 For optional **Kokoro-82M Puck** narration (may fetch model weights on first use):
 
 ```powershell
-python -m pip install -e ".[tts]"
+python -m pip install -e ".[tts,images]"
 ```
 
 ## Complete source → narration → parts → review workflow
@@ -77,6 +77,11 @@ ashentoons review-check "D:\AshenToons\reviews\episode01-review.json"
 ashentoons seo-draft "D:\AshenToons\manifests\episode01.json" --source-root "D:\AshenToons" --series "Your Manhwa Title" --title "Your Accurate English Recap Title" --output "D:\AshenToons\manifests\youtube01.json"
 ```
 
+Optional human-reviewed thumbnail draft (source artwork only, 1280x720, under 2 MB):
+```powershell
+ashentoons thumbnail "sources/ch01-panel01.png" --source-root "D:\\AshenToons" --sha256 ACTUAL_PANEL_SHA256 --headline "BACK FOR REVENGE!" --output "D:\\AshenToons\\thumbnails\\episode01.jpg"
+```
+
 8. Transfer each MP4 to your phone or attach it in ChatGPT for per-part review when the transfer interface supports that file size. **This repository itself does not send chat attachments or upload to YouTube.**
 
 ## Safety and disk space
@@ -94,4 +99,4 @@ The real media smoke test requires FFmpeg. See [architecture](docs/ARCHITECTURE.
 
 ## Limitations / roadmap
 
-Automated scene meaning verification, speech transcription/alignment, expressive multi-scene editing, thumbnail generation, YouTube OAuth upload, real channel analytics, trending-title A/B research, and independent release certification are **not implemented**. GPT-6 can help write and review story plans, but it is not magically running inside this local package and cannot replace editorial approval.
+Automated scene meaning verification, speech transcription/alignment, expressive multi-scene editing, advanced thumbnail A/B experimentation, YouTube OAuth upload, real channel analytics, trending-title A/B research, and independent release certification are **not implemented**. GPT-6 can help write and review story plans, but it is not magically running inside this local package and cannot replace editorial approval.
