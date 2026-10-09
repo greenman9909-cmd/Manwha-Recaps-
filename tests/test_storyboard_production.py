@@ -111,10 +111,10 @@ class ProductionTests(unittest.TestCase):
             output.write_bytes(b"part")
             return {"status": "PASS", "duration": 20, "sha256": "a" * 64}
         probe = {"status": "PASS", "duration": 10, "width": 1280, "height": 720}
-        with patch("ashentoons.production.probe_audio", return_value={"status": "PASS", "duration": 10}), \\
-             patch("ashentoons.production.render_clip", side_effect=write_clip) as render, \\
-             patch("ashentoons.production.assemble", side_effect=assemble), \\
-             patch("ashentoons.production.probe_media", return_value=probe), \\
+        with patch("ashentoons.production.probe_audio", return_value={"status": "PASS", "duration": 10}), \
+             patch("ashentoons.production.render_clip", side_effect=write_clip) as render, \
+             patch("ashentoons.production.assemble", side_effect=assemble), \
+             patch("ashentoons.production.probe_media", return_value=probe), \
              patch("ashentoons.production.decode_check", return_value={"status": "PASS"}) as decode:
             first = render_parts(one, self.root, self.root / "exports")
             self.assertEqual(first["status"], "PASS", first)
