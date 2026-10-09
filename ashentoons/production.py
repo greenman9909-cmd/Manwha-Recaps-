@@ -153,12 +153,63 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
         clip_dir = output_dir / "clips"
+        if clip_dir.is_symlink():
+            return {"status": "FAIL", "errors": ["clip cache cannot be a symlink"]}
         clip_dir.mkdir(exist_ok=True)
     except OSError:
         return {"status": "FAIL", "errors": ["unable to create output directory"]}
     reports = []
     cache_hits = 0
+    parts_reused = 0
     for part in plan["parts"]:
+        destination = output_dir / f"part-{part['part']:03d}.mp4"
+        sidecar = output_dir / f"part-{part['part']:03d}.json"
+        expected = sum(
+            manifest["clips"][i]["end"] - manifest["clips"][i]["start"]
+            for i in part["clip_indices"])
+        fingerprint = sha256(json.dumps({
+            "render_revision": RENDER_REVISION,
+            "clips": [manifest["clips"][i] for i in part["clip_indices"]],
+            "dimensions": [width, height],
+        }, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+        # Preserve an existing reviewed output. Reuse only if exact manifest
+        # fingerprint, recorded video hash and full decode all still pass.
+        if destination.exists() or sidecar.exists() or destination.is_symlink() or sidecar.is_symlink():
+            if (not destination.is_file() or destination.is_symlink()
+                    or not sidecar.is_file() or sidecar.is_symlink()
+                    or sidecar.stat().st_size > 16384):
+                return {"status": "FAIL", "errors": [
+                    f"part {part['part']}: existing output without safe matching sidecar; preserve it"],
+                    "completed_parts": reports}
+            try:
+                with sidecar.open("r", encoding="utf-8") as stream:
+                    previous = json.load(stream)
+                recorded_sha = previous.get("sha256")
+                matching = (previous.get("fingerprint") == fingerprint
+                            and isinstance(recorded_sha, str)
+                            and file_hash(destination) == recorded_sha)
+            except (OSError, ValueError, TypeError, AttributeError):
+                matching = False
+            if not matching:
+                return {"status": "FAIL", "errors": [
+                    f"part {part['part']}: changed/corrupt existing output; use a new export directory"],
+                    "completed_parts": reports}
+            verified = decode_check(destination, expected)
+            if verified["status"] != "PASS":
+                return {"status": "FAIL", "errors": [
+                    f"part {part['part']}: existing export failed complete AV decode; preserved"],
+                    "completed_parts": reports}
+            reports.append({
+                "part": part["part"], "path": str(destination),
+                "duration": verified["duration"],
+                "sha256": recorded_sha,
+                "clip_indices": part["clip_indices"], "reused": True,
+            })
+            cache_hits += len(part["clip_indices"])
+            parts_reused += 1
+            continue
+
         rendered = []
         for index in part["clip_indices"]:
             shot = manifest["clips"][index]
@@ -168,7 +219,8 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
                 return {"status": "FAIL", "errors": [f"clip[{index}]: invalid camera motion"],
                         "completed_parts": reports}
             key_values = [RENDER_REVISION, shot["panel_sha256"],
-                          shot["audio_sha256"], f"{duration:.6f}", str(width), str(height), motion]
+                          shot["audio_sha256"], f"{duration:.6f}",
+                          str(width), str(height), motion]
             cache_key = sha256("|".join(key_values).encode("utf-8")).hexdigest()[:20]
             clip_path = clip_dir / f"shot-{index:05d}-{cache_key}.mp4"
             cached = False
@@ -184,28 +236,66 @@ def render_parts(manifest: dict, source_root: Path, output_dir: Path,
                             "detail": result, "completed_parts": reports}
                 info = probe_media(clip_path)
                 if (info["status"] != "PASS" or info["width"] != width
-                        or info["height"] != height or abs(info["duration"] - duration) > 0.35):
-                    return {"status": "FAIL", "errors": [f"clip[{index}]: render output failed probe"],
-                            "completed_parts": reports}
+                        or info["height"] != height
+                        or abs(info["duration"] - duration) > 0.35):
+                    return {"status": "FAIL", "errors": [
+                        f"clip[{index}]: render output failed probe"],
+                        "completed_parts": reports}
             else:
                 cache_hits += 1
             rendered.append(clip_path)
-        destination = output_dir / f"part-{part['part']:03d}.mp4"
-        result = assemble(rendered, destination)
-        if result["status"] != "PASS":
-            return {"status": "FAIL", "errors": [f"part {part['part']}: assembly failed"],
+
+        fd, staged_name = tempfile.mkstemp(
+            prefix=".ashentoons-part-", suffix=".mp4", dir=output_dir)
+        os.close(fd)
+        staged = Path(staged_name)
+        staged_sidecar = None
+        try:
+            result = assemble(rendered, staged)
+            if result["status"] != "PASS":
+                return {"status": "FAIL", "errors": [
+                    f"part {part['part']}: assembly failed"],
                     "detail": result, "completed_parts": reports}
-        decoded = decode_check(destination, sum(
-            manifest["clips"][i]["end"] - manifest["clips"][i]["start"]
-            for i in part["clip_indices"]))
-        if decoded["status"] != "PASS":
-            destination.unlink(missing_ok=True)
-            return {"status": "FAIL", "errors": [f"part {part['part']}: failed complete AV decode"],
+            decoded = decode_check(staged, expected)
+            if decoded["status"] != "PASS":
+                return {"status": "FAIL", "errors": [
+                    f"part {part['part']}: failed complete AV decode"],
                     "detail": decoded, "completed_parts": reports}
-        reports.append({"part": part["part"], "path": str(destination),
-                        "duration": result["duration"], "sha256": result["sha256"],
-                        "clip_indices": part["clip_indices"]})
-    return {"status": "PASS", "parts": reports, "clips_reused": cache_hits,
-            "subtitles": False, "ready_to_publish": False,
-            "requires_independent_semantic_review": True,
-            "note": "Rendering is not evidence that spoken events match the panels"}
+
+            fd, metadata_name = tempfile.mkstemp(
+                prefix=".ashentoons-part-", suffix=".json", dir=output_dir)
+            staged_sidecar = Path(metadata_name)
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                json.dump({
+                    "fingerprint": fingerprint,
+                    "sha256": result["sha256"],
+                    "duration": result["duration"],
+                    "clip_indices": part["clip_indices"],
+                    "render_revision": RENDER_REVISION,
+                }, stream, sort_keys=True)
+                stream.write("\n")
+            if destination.exists() or sidecar.exists():
+                return {"status": "FAIL", "errors": [
+                    f"part {part['part']}: export appeared during rendering; preserve existing"],
+                    "completed_parts": reports}
+            os.replace(staged, destination)
+            os.replace(staged_sidecar, sidecar)
+        except OSError as exc:
+            return {"status": "FAIL", "errors": [
+                f"part {part['part']}: staging or save failed: {exc}"],
+                "completed_parts": reports}
+        finally:
+            staged.unlink(missing_ok=True)
+            if staged_sidecar is not None:
+                staged_sidecar.unlink(missing_ok=True)
+        reports.append({
+            "part": part["part"], "path": str(destination),
+            "duration": result["duration"], "sha256": result["sha256"],
+            "clip_indices": part["clip_indices"], "reused": False,
+        })
+    return {
+        "status": "PASS", "parts": reports, "clips_reused": cache_hits,
+        "parts_reused": parts_reused, "subtitles": False,
+        "ready_to_publish": False, "requires_independent_semantic_review": True,
+        "note": "Full technical decode passed; manual scene-to-narration review is still required",
+    }
