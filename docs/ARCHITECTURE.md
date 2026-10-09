@@ -6,7 +6,7 @@
 - **Optional Kokoro-82M TTS**: one canonical `am_puck` English MC voice for narration; generate 0.1–30 second atomic WAV lines.
 - **FFmpeg / ffprobe**: deterministic 24-fps render/assemble; source-only still panels, centered zoom effects, AAC audio; no subtitle streams added.
 - **Independent reviewer**: compares actual rendered frames, original authorized source panels and narration, then checks the human review sheet.
-- **YouTube**: metadata draft only; explicitly NO uploader in this version.
+- **YouTube**: metadata draft and optional explicit OAuth **private-only** draft uploader. No public publisher, no automatic release.
 
 ## File/data pipeline
 
@@ -32,6 +32,8 @@ authorized JPG/PNG/WEBP + owner-provided SHA-256
  reviewer frame JPEGs + human review JSON (all fields initially pending)
              |
   truthful private YouTube metadata JSON + optional authorized-panel thumbnail draft
+             |
+  OPTIONAL explicit OAuth private upload, with preflight and persisted receipt
              |
         HUMAN release decision (no auto uploader)
 ```
@@ -61,11 +63,11 @@ An input manifest used for rendering includes `voices: {"MC":"am_puck"}`, each s
 4. `render-parts`: additionally checks WAV hashes, lengths, camera presets, part FFprobe and full decode.
 5. `review-frames` / `review-template`: checks real MP4 frames and asks a human to confirm each shot and all audio/continuity/absence of burned subtitles.
 6. `review-check`: fails until every field is confirmed; no automatic release permission.
-7. `certify`: still **NOT_CERTIFIED** with `release_allowed=false`. This version has no auto publishing path.
+7. `certify`: still **NOT_CERTIFIED** with `release_allowed=false`. This version has no public publishing path. The optional uploader can create a private draft for review only, after explicit user consent and technical decode.
 
 ## Remaining engineering work
 
-Audio text-to-speech transcription cross-check; independently test panel/story meaning with actual visual context; robust published-video certification; YouTube OAuth upload with explicit user approval; browser/GitHub integration; dynamic expressive effects; advanced thumbnail testing; analytics-driven content research. These are not faked by changing flags.
+Audio text-to-speech transcription cross-check; independently test panel/story meaning with actual visual context; robust published-video certification; public YouTube publishing with independent release certification; browser/GitHub integration; dynamic expressive effects; advanced thumbnail testing; analytics-driven content research. These are not faked by changing flags.
 
 ## Upstream comparison
 
