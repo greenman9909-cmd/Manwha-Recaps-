@@ -1,6 +1,6 @@
 # AshenToons Studio — v0.3 (local-first segment pipeline)
 
-**A practical, fail-closed Python/FFmpeg toolkit for producing manhwa recap MP4s in short, reviewable parts.** Designed for GPT-6 planning and deterministic local execution. **No YouTube upload or autonomous editorial certification is claimed.**
+**A practical, fail-closed Python/FFmpeg toolkit for producing manhwa recap MP4s in short, reviewable parts.** Designed for GPT-6 planning and deterministic local execution. **No public YouTube publishing or autonomous editorial certification is claimed.**
 
 ## Implemented
 
@@ -12,13 +12,14 @@
 - Independent ffprobe check and full FFmpeg decode of assembled video **and audio**.
 - Frame-by-frame editorial review snapshots, editable human review checklist, fail-closed release controls.
 - Truthful YouTube metadata drafts, default **private**; optional 1280×720 JPEG thumbnail generation from an authorized source image.
+- Optional OAuth YouTube **private-only draft upload** with a receipt created before the API call, explicit consent, explicit audience declaration, and no automatic ambiguous retries.
 - **No added subtitles, no generated illustration assets, no automatic publication.**
 - Non-destructive `workspace-init` to prepare `D:\AshenToons`; **no delete or disk format feature**.
 - Python 3.10/3.12/3.13 CI including a real FFmpeg-generated media smoke test.
 
 ## What this intentionally cannot certify
 
-Technical decoding does **not** verify that the spoken events match the artwork, that speech bubbles contain no text, that source reuse is licensed, or that a title/thumbnail is truthful. `certify` still **refuses release** until those independent checks are fully verified. The CLI does not post to YouTube. Only use assets that you have the right to use.
+Technical decoding does **not** verify that the spoken events match the artwork, that speech bubbles contain no text, that source reuse is licensed, or that a title/thumbnail is truthful. `certify` still **refuses release** until those independent checks are fully verified. The optional `upload-private` command can upload a private draft with your Google OAuth approval, but it **cannot publish publicly**. Only use assets that you have the right to use.
 
 ## Install
 
@@ -33,7 +34,7 @@ ashentoons workspace-init "D:\AshenToons"
 For optional **Kokoro-82M Puck** narration (may fetch model weights on first use):
 
 ```powershell
-python -m pip install -e ".[tts,images]"
+python -m pip install -e ".[tts,images,youtube]"
 ```
 
 ## Complete source → narration → parts → review workflow
@@ -82,6 +83,14 @@ Optional human-reviewed thumbnail draft (source artwork only, 1280x720, under 2 
 ashentoons thumbnail "sources/ch01-panel01.png" --source-root "D:\\AshenToons" --sha256 ACTUAL_PANEL_SHA256 --headline "BACK FOR REVENGE!" --output "D:\\AshenToons\\thumbnails\\episode01.jpg"
 ```
 
+Optional **private-only** YouTube draft upload, after checking the real MP4, source rights, metadata and approved thumbnail. Supply your own Google Cloud OAuth Desktop App client JSON locally, not in GitHub or chat; the first upload opens a browser for consent. The platform's audience setting requires an explicit yes/no choice. The command cannot make the video public:
+
+```powershell
+ashentoons upload-private "D:\\AshenToons\\exports\\episode01\\part-001.mp4" --metadata "D:\\AshenToons\\manifests\\youtube01.json" --client-secrets "D:\\AshenToons\\.credentials\\oauth-client.json" --token-file "D:\\AshenToons\\.credentials\\youtube-token.json" --receipt "D:\\AshenToons\\manifests\\upload-receipt-part001.json" --made-for-kids no --confirm-private-upload
+```
+
+`--made-for-kids no` is **only an example**: choose the correct setting for the actual video. The uploader checks full audio/video decoding before posting, does not auto-retry an uncertain upload, and writes a receipt whose status may require inspecting YouTube Studio. OAuth/API quota and account verification requirements still apply.
+
 8. Transfer each MP4 to your phone or attach it in ChatGPT for per-part review when the transfer interface supports that file size. **This repository itself does not send chat attachments or upload to YouTube.**
 
 ## Safety and disk space
@@ -99,4 +108,4 @@ The real media smoke test requires FFmpeg. See [architecture](docs/ARCHITECTURE.
 
 ## Limitations / roadmap
 
-Automated scene meaning verification, speech transcription/alignment, expressive multi-scene editing, advanced thumbnail A/B experimentation, YouTube OAuth upload, real channel analytics, trending-title A/B research, and independent release certification are **not implemented**. GPT-6 can help write and review story plans, but it is not magically running inside this local package and cannot replace editorial approval.
+Automated scene meaning verification, speech transcription/alignment, expressive multi-scene editing, advanced thumbnail A/B experimentation, public YouTube publishing, real channel analytics, trending-title A/B research, and independent release certification are **not implemented**. GPT-6 can help write and review story plans, but it is not magically running inside this local package and cannot replace editorial approval.
