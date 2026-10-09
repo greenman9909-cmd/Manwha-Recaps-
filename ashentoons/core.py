@@ -61,6 +61,9 @@ def validate(manifest: dict, root: Path) -> dict:
     if not isinstance(clips, list) or not clips:
         errors.append('clips must be a nonempty list')
         clips = []
+    if len(clips) > 10000:
+        errors.append('clip count exceeds safety limit')
+        clips = clips[:10000]
     last_end = 0.0
     seen_events: set[str] = set()
     hash_cache: dict[Path, str] = {}
@@ -89,8 +92,12 @@ def validate(manifest: dict, root: Path) -> dict:
         event = clip.get('event_id')
         if not isinstance(event, str) or not event.strip():
             errors.append(f'{label}: missing grounded event')
-        elif event in seen_events and not clip.get('event_continuation', False):
+        elif type(clip.get('event_continuation', False)) is not bool:
+            errors.append(f'{label}: event_continuation must be boolean')
+        elif event in seen_events and clip.get('event_continuation') is not True:
             errors.append(f'{label}: duplicate event without continuation')
+        elif event not in seen_events and clip.get('event_continuation') is True:
+            errors.append(f'{label}: continuation references unseen event')
         else:
             seen_events.add(event)
         if not isinstance(clip.get('narration'), str) or not clip['narration'].strip():
