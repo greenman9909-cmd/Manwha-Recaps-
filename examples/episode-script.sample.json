@@ -1,0 +1,29 @@
+{
+  "source_authorized": true,
+  "subtitles": false,
+  "generated_visuals": false,
+  "clips": [
+    {
+      "panel": "sources/ch01-panel01.png",
+      "panel_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "event_id": "ch01-reveal-01",
+      "chapter": 1,
+      "narration": "A family secret changes everything, and our hero has no idea what comes next.",
+      "panel_summary": "The first panel introduces the family meeting.",
+      "match_reason": "The introduction visually establishes the people being described.",
+      "narrative_role": "hook",
+      "motion": "zoom_in"
+    },
+    {
+      "panel": "sources/ch01-panel02.png",
+      "panel_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "event_id": "ch01-reveal-02",
+      "chapter": 1,
+      "narration": "The decision is made, and the consequences are about to get very complicated.",
+      "panel_summary": "The second panel shows the decision being announced.",
+      "match_reason": "This is the moment where the narrator's decision occurs.",
+      "narrative_role": "conflict",
+      "motion": "static"
+    }
+  ]
+}

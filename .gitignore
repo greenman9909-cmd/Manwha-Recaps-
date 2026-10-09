@@ -6,3 +6,16 @@ cache/
 *.mp4
 *.wav
 .env
+
+# OAuth tokens and locally authorized copyrighted assets never belong in code Git
+.credentials/
+.tokens/
+*client_secret*.json
+youtube-token*.json
+upload-receipts/
+/sources/
+/narration/
+/exports/
+/reviews/
+/thumbnails/
+/manifests/

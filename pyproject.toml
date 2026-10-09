@@ -1,11 +1,24 @@
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
 [project]
 name = "ashentoons-studio"
-version = "0.2.0"
-description = "Fail-closed, source-only manhwa recap production prototype"
+version = "0.3.0"
+description = "Source-only manhwa recap segment production with fail-closed editorial QC"
 requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+tts = [
+    "kokoro>=0.9.4,<1.0",
+    "numpy>=1.24,<3",
+    "soundfile>=0.12,<1",
+]
+
+images = ["Pillow>=10.2,<13"]
+youtube = ["google-api-python-client>=2.100,<3", "google-auth-oauthlib>=1.2,<2", "google-auth-httplib2>=0.2,<1"]
+
 [project.scripts]
 ashentoons = "ashentoons.cli:main"
 
