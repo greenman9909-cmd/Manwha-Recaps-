@@ -122,3 +122,30 @@ def certify(manifest: dict, root: Path, rendered: Path) -> dict:
     report['release_allowed'] = False
     report['missing_checks'] = ['decoded frame inspection', 'speech verification', 'semantic panel alignment', 'independent QC']
     return report
+
+
+def audit_source_image(root: Path, relative: object, expected_sha256: object) -> dict:
+    """Strict source preflight. Signature and hash do NOT prove image decodability or license."""
+    errors: list[str] = []
+    path = _safe_source(root, relative)
+    if path is None:
+        return {'status': 'FAIL', 'errors': ['unsafe or missing source']}
+    if not isinstance(expected_sha256, str) or not _HASH.fullmatch(expected_sha256):
+        errors.append('invalid expected SHA-256')
+    suffix = path.suffix.lower()
+    try:
+        with path.open('rb') as stream:
+            header = stream.read(16)
+        recognized = (
+            (suffix == '.png' and header.startswith(b'\x89PNG\r\n\x1a\n')) or
+            (suffix in ('.jpg', '.jpeg') and header.startswith(b'\xff\xd8\xff')) or
+            (suffix == '.webp' and header.startswith(b'RIFF') and header[8:12] == b'WEBP')
+        )
+        if not recognized:
+            errors.append('unsupported or invalid image signature')
+        if isinstance(expected_sha256, str) and _HASH.fullmatch(expected_sha256) and file_hash(path) != expected_sha256:
+            errors.append('source hash mismatch')
+    except OSError:
+        errors.append('source could not be read')
+    return {'status': 'FAIL' if errors else 'PASS', 'errors': errors,
+            'note': 'Signature and hash only; decoding, semantic grounding and license proof not verified'}
