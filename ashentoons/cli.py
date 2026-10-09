@@ -31,14 +31,16 @@ def _load_json(path: Path) -> dict:
 
 
 def _write_json(path: Path, report: dict) -> None:
-    if path.suffix.lower() != ".json" or path.is_symlink():
-        raise ValueError("output must be a non-symlink JSON path")
+    if path.suffix.lower() != ".json" or path.is_symlink() or path.exists():
+        raise ValueError("output must be a new non-symlink JSON path")
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, name = tempfile.mkstemp(prefix=".ashentoons-", suffix=".json", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
             json.dump(report, stream, indent=2, ensure_ascii=False)
             stream.write("\n")
+        if path.exists():
+            raise ValueError("output appeared during generation; refusing overwrite")
         os.replace(name, path)
     finally:
         Path(name).unlink(missing_ok=True)
