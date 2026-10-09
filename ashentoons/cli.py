@@ -20,7 +20,7 @@ from .tts import synthesize, VOICE, SUPPORTED_VOICES
 from .narrate import narrate_script
 from .review_frames import extract_review_frames
 from .workspace import initialize_workspace
-from .memanga_ingest import ingest_memanga_chapter
+from .memanga_ingest import ingest_memanga_chapter, ingest_memanga_batch
 from .thumbnail import make_thumbnail
 from .youtube import upload_private_draft
 
@@ -147,6 +147,14 @@ def main(argv=None):
     importer.add_argument("--chapter", type=int, required=True)
     importer.add_argument("--reading-direction", choices=("rtl", "ltr"), default="rtl")
 
+    batch = sub.add_parser("ingest-memanga-batch", help="import numbered chapter folders for one MeManga title")
+    batch.add_argument("manga_folder", type=Path)
+    batch.add_argument("--source-root", type=Path, required=True)
+    batch.add_argument("--series-id", required=True)
+    batch.add_argument("--start-chapter", type=int, required=True)
+    batch.add_argument("--end-chapter", type=int, required=True)
+    batch.add_argument("--reading-direction", choices=("rtl", "ltr"), default="rtl")
+
     workspace = sub.add_parser("workspace-init", help="prepare an AshenToons folder without deleting files")
     workspace.add_argument("directory", type=Path)
 
@@ -195,6 +203,10 @@ def main(argv=None):
             report = ingest_memanga_chapter(args.source_root, args.chapter_folder,
                                              args.series_id, args.chapter,
                                              args.reading_direction)
+        elif args.command == "ingest-memanga-batch":
+            report = ingest_memanga_batch(args.source_root, args.manga_folder,
+                                          args.series_id, args.start_chapter,
+                                          args.end_chapter, args.reading_direction)
         elif args.command == "workspace-init":
             report = initialize_workspace(args.directory)
         elif args.command == "narrate-script":
