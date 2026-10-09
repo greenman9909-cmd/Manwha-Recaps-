@@ -28,8 +28,8 @@ def synthesize(text: str, output: Path, voice: str = VOICE,
     if (type(speed) not in (float, int) or not math.isfinite(speed)
             or not 0.75 <= speed <= 1.25):
         return {"status": "FAIL", "errors": ["invalid speech speed"]}
-    if not isinstance(output, Path) or output.suffix.lower() != ".wav" or output.is_symlink():
-        return {"status": "FAIL", "errors": ["output must be a non-symlink WAV"]}
+    if not isinstance(output, Path) or output.suffix.lower() != ".wav" or output.is_symlink() or output.exists():
+        return {"status": "FAIL", "errors": ["output must be a new, non-symlink WAV"]}
     try:
         from kokoro import KPipeline
         import numpy as np
@@ -62,6 +62,8 @@ def synthesize(text: str, output: Path, voice: str = VOICE,
         os.close(fd)
         temp = Path(name)
         sf.write(str(temp), samples, SAMPLE_RATE, subtype="PCM_16")
+        if output.exists():
+            return {"status": "FAIL", "errors": ["audio file appeared during generation; refusing overwrite"]}
         os.replace(temp, output)
         return {"status": "PASS", "path": str(output), "voice": VOICE,
                 "duration": round(seconds, 3), "sha256": file_hash(output),
