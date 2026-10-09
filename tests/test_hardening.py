@@ -47,6 +47,20 @@ class HardeningTests(unittest.TestCase):
         second=copy.deepcopy(self.m['clips'][0]);second.update(start=2,end=4,event_continuation=True)
         self.m['clips'].append(second)
         self.assertEqual(validate(self.m,self.root)['status'],'PASS')
+    def test_truthy_continuation_attack(self):
+        def mutate(m):
+            second=copy.deepcopy(m['clips'][0])
+            second.update(start=2,end=4,event_continuation='yes')
+            m['clips'].append(second)
+        self.fail_case(mutate)
+    def test_orphan_continuation(self):
+        self.fail_case(lambda m: m['clips'][0].update(event_continuation=True))
+    def test_continuation_integer_rejected(self):
+        self.fail_case(lambda m: m['clips'][0].update(event_continuation=1))
+    def test_clip_count_limit(self):
+        m=copy.deepcopy(self.m)
+        m['clips']=m['clips']*10001
+        self.assertEqual(validate(m,self.root)['status'],'FAIL')
     def test_symlink_escape(self):
         outside=Path(self.temp.name).parent/'ashentoons-outside-test.txt'
         try:
