@@ -18,7 +18,7 @@ SAMPLE_RATE = 24000
 
 
 def synthesize(text: str, output: Path, voice: str = VOICE,
-               speed: float = 1.0) -> dict:
+               speed: float = 1.0, pipeline=None) -> dict:
     """Generate one <=30-second WAV line atomically; keep heavy imports optional."""
     if (not isinstance(text, str) or not text.strip() or len(text) > 1800
             or "\x00" in text):
@@ -40,7 +40,8 @@ def synthesize(text: str, output: Path, voice: str = VOICE,
     temp = None
     try:
         chunks = []
-        pipeline = KPipeline(lang_code="a")
+        if pipeline is None:
+            pipeline = KPipeline(lang_code="a")
         for _graphemes, _phonemes, audio in pipeline(text, voice=voice, speed=speed):
             chunk = np.asarray(audio, dtype=np.float32).reshape(-1)
             if not np.isfinite(chunk).all():
