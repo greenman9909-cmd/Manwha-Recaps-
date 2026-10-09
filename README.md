@@ -1,9 +1,10 @@
-# AshenToons Studio — v0.6 (local-first segment pipeline)
+# AshenToons Studio — v0.7 (local-first segment pipeline + studio HQ)
 
 **A practical, fail-closed Python/FFmpeg toolkit for producing manhwa recap MP4s in short, reviewable parts.** Designed for GPT-6 planning and deterministic local execution. **No public YouTube publishing or autonomous editorial certification is claimed.**
 
 ## Implemented
 
+- **AshenToons HQ group chat:** WhatsApp-style local studio with ten original role avatars and personalities, persistent messages, real worker check logs, local Ollama Qwen3.5:9B conversation engine and a separate bridge for GPT-6 CEO/Operator via connected ChatGPT. Private loopback one-click opener and user-login autostart on Windows. See [HQ Studio guide](hq/README.md).
 - **Native MeManga chapter import:** lossless local pages with natural numbered order, decoding verification, SHA-256 provenance, RTL/LTR page metadata and resumable multi-chapter batch import. This does not trigger a web download.
 - Source-only panel verification: paths stay inside `--source-root`, expected SHA-256, source signatures.
 - Narration-first timing: optional local **Kokoro-82M English character cast**, with stable per-speaker voice mapping, MC-led narration and voice-separated SHA-addressed WAV reuse. Old Puck-only scripts still work.
