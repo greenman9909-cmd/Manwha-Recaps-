@@ -23,6 +23,15 @@ python -m pip install -e ".[images]"
 python -m ashentoons.cli ingest-memanga "D:\AshenToons\temp\memanga-downloads\The Wrong Way to Use Healing Magic\Chapter 1" --source-root "D:\AshenToons" --series-id healing-magic --chapter 1 --reading-direction rtl
 ~~~
 
+To import every complete numbered chapter folder from the same MeManga manga directory, run:
+
+~~~powershell
+python -m ashentoons.cli ingest-memanga-batch "D:\AshenToons\temp\memanga-downloads\The Wrong Way to Use Healing Magic" --source-root "D:\AshenToons" --series-id healing-magic --start-chapter 1 --end-chapter 12 --reading-direction rtl
+~~~
+
+The batch processes chapters in sequence, stops at the first missing/bad chapter,
+reports its number, and resumes without duplicating previous valid imports.
+
 Use the actual downloaded chapter path. The command does **not** fetch pages
 when the input directory is missing. For webtoons use reading direction ltr.
 
