@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="theme-color" content="#0c111b"/>
+<meta name="description" content="AshenToons HQ — verified production and studio communication control room"/>
+<title>AshenToons HQ — The Studio</title>
+<link rel="icon" type="image/svg+xml" href="/avatars/ceo.svg?key={{KEY}}"/>
+<link rel="stylesheet" href="/styles.css?key={{KEY}}"/>
+<script src="/app.js?key={{KEY}}" defer></script>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-symbol"><span>A</span><div class="brand-spark">✦</div></div>
+      <div class="brand-copy"><strong>ASHENTOONS</strong><small>STUDIO HQ <em>v1.0</em></small></div>
+      <button class="icon-button sidebar-close" id="close-sidebar" aria-label="Close navigation">✕</button>
+    </div>
+    <div class="sidebar-scroll">
+      <div class="sidebar-label">PRODUCTION</div>
+      <button class="project-preview" data-view="pipeline" id="project-quick">
+        <div class="project-icon">⚡</div>
+        <div class="project-lines"><strong>Healing Magic</strong><span>Episode 001 · In production</span></div>
+        <span class="project-chevron">›</span>
+      </button>
+      <div class="sidebar-split"></div>
+      <div class="sidebar-label label-row"><span>MESSAGES</span><span id="unread-count" class="tiny-count">0</span></div>
+      <button class="room-button selected" data-room="group">
+        <div class="room-avatar group-icon">✦<span class="online-dot"></span></div>
+        <div class="room-text"><strong>Studio Group</strong><span>Everyone · Production discussion</span></div>
+        <span class="room-glyph">#</span>
+      </button>
+      <div id="room-list" class="room-list"></div>
+      <div class="sidebar-split"></div>
+      <div class="sidebar-label">WORKSPACE</div>
+      <button class="menu-link" data-view="pipeline"><span class="menu-icon">◫</span> Production pipeline <span class="right-key">8</span></button>
+      <button class="menu-link" data-view="crew"><span class="menu-icon">♙</span> Meet the team <span class="right-key">10</span></button>
+      <button class="menu-link" data-view="activity"><span class="menu-icon">◷</span> Activity & evidence</button>
+    </div>
+    <div class="side-footer">
+      <div class="computer-status"><span class="alive"></span><span>Connected workstation</span><b>NVME</b></div>
+      <div class="identity"><div class="user-avatar">Y</div><div><strong>Studio Owner</strong><small>Production control access</small></div><span class="identity-more">···</span></div>
+    </div>
+  </aside>
+
+  <main class="main-panel">
+    <div class="topbar">
+      <div class="top-left">
+        <button class="icon-button mobile-menu" id="open-sidebar" aria-label="Open navigation">☰</button>
+        <div class="top-crumb"><span>Studio</span><span class="crumb-sep">/</span><b id="current-location">Group chat</b></div>
+      </div>
+      <div class="top-right">
+        <span class="model-label" id="model-label" title="GPT-6 leads through connected ChatGPT; the local crew uses Ollama Qwen."><span class="neon-dot"></span><span id="model-name">Checking local crew…</span></span>
+        <button id="refresh" class="soft-button" title="Refresh current status">↻ <span class="hide-small">Refresh</span></button>
+        <button id="copy-link" class="icon-button" aria-label="Copy studio link" title="Copy private link">↗</button>
+      </div>
+    </div>
+
+    <section id="chat-screen" class="screen active">
+      <header class="chat-header">
+        <div class="header-avatar" id="channel-avatar">✦</div>
+        <div class="header-copy"><h1 id="channel-title">Studio Group</h1><p id="channel-subtitle">10 team profiles · Verified progress only</p></div>
+        <div class="channel-actions"><span class="header-tag"><span class="green-pin"></span>LIVE</span></div>
+      </header>
+      <div class="messages-container" id="messages-container">
+        <div class="day-separator"><span>PROJECT CONTROL ROOM</span></div>
+        <div id="messages" class="messages"><div class="empty-placeholder">Connecting to your studio…</div></div>
+      </div>
+      <footer class="composer-area">
+        <div class="composer-context" id="composer-context"><span class="context-pulse">✦</span> GPT-6 receives your messages when this connected chat is active. Local workers answer verified checks.</div>
+        <form id="composer-form" class="composer">
+          <button type="button" class="icon-button attach-button" id="run-check" title="Run production readiness check" aria-label="Run readiness check">⌁</button>
+          <textarea id="message-input" rows="1" maxlength="2200" placeholder="Message the studio team…" aria-label="Message the studio team"></textarea>
+          <span id="message-length" class="message-length"></span>
+          <button type="submit" class="send-button" id="send-message" aria-label="Send message">➤</button>
+        </form>
+        <div class="composer-hint">ENTER to send <span>·</span> SHIFT + ENTER for a new line <span>·</span> Local AI replies are labeled; GPT-6 messages require the connected session</div>
+      </footer>
+    </section>
+
+    <section id="pipeline-screen" class="screen alternate-screen">
+      <header class="view-heading"><div><span class="eyebrow">CURRENT PRODUCTION</span><h1>The Wrong Way to Use Healing Magic</h1><p>A real production pipeline. Stages unlock only when their inputs are verified.</p></div><span class="view-number">001 / SERIES</span></header>
+      <div class="pipeline-hero">
+        <div><span class="hero-kicker">ASHENTOONS ORIGINAL RECAP</span><h2>Healing Magic<br/><em>Episode One</em></h2><p>Japanese manga · Story-first recap · English cast · Target ~60 min</p><div class="hero-ctas"><button class="primary-btn" data-action="create-plan">Build execution plan ↗</button><button class="outline-btn" data-action="readiness">Check readiness</button></div></div>
+        <div class="cover-art" aria-hidden="true"><div class="cover-rune">✦</div><div class="cover-ring ring-a"></div><div class="cover-ring ring-b"></div><span>AH / 001</span></div>
+      </div>
+      <div class="section-top"><h2>Production stages</h2><span id="stage-count" class="section-muted">0 / 7 ready</span></div>
+      <div class="pipeline-grid" id="pipeline-grid"></div>
+      <div class="pipeline-note"><span>i</span><div><strong>How this studio works</strong><p>GPT-6 makes the creative decisions and can operate the laptop from the connected conversation. Department personalities are assigned perspectives and local verification jobs, not ten independent copies of GPT-6.</p></div></div>
+    </section>
+
+    <section id="crew-screen" class="screen alternate-screen">
+      <header class="view-heading"><div><span class="eyebrow">YOUR PRODUCTION CREW</span><h1>Meet the studio</h1><p>Distinct personalities, dedicated responsibilities, shared evidence, one GPT-6 brain.</p></div><span class="view-number">10 CREW PROFILES</span></header>
+      <div id="crew-grid" class="crew-grid"></div>
+    </section>
+
+    <section id="activity-screen" class="screen alternate-screen">
+      <header class="view-heading"><div><span class="eyebrow">ACCOUNTABILITY</span><h1>Activity & evidence</h1><p>Every actual task run stays on the record. Proposed work and checked work are not the same.</p></div><button data-action="readiness" class="primary-btn">Run readiness audit</button></header>
+      <div id="activity-list" class="activity-list"></div>
+    </section>
+  </main>
+
+  <aside class="right-panel">
+    <div class="right-header"><span>COMMAND CENTER</span><span class="panel-lamps"><i></i><i></i><i></i></span></div>
+    <div class="right-scroll">
+      <div class="control-header"><span class="eyebrow">PROJECT HEALTH</span><div class="control-title"><strong>Episode 001</strong><span id="project-status" class="status-pill blocked">Blocked</span></div><p>Healing Magic · English Manga Recap</p></div>
+      <div class="readiness-stat"><div class="stat-top"><span>Pipeline readiness</span><strong id="readiness-value">0%</strong></div><div class="progress-track"><div class="progress-bar" id="readiness-bar"></div></div><small id="readiness-detail">Checking project files…</small></div>
+      <div class="right-section"><div class="section-label">QUICK ACTIONS</div><div class="action-grid">
+        <button data-action="readiness"><span class="action-symbol">◎</span><strong>All-team check</strong><small>Evidence-based status</small></button>
+        <button data-action="test-studio"><span class="action-symbol">⌘</span><strong>Run tests</strong><small>Real Python checks</small></button>
+        <button data-action="audit-cast"><span class="action-symbol">♫</span><strong>Audit voices</strong><small>Check actual WAVs</small></button>
+        <button data-action="scan-sources"><span class="action-symbol">▤</span><strong>Scan pages</strong><small>Original manga files</small></button>
+        <button data-action="audit-editor"><span class="action-symbol">◈</span><strong>Editor doctor</strong><small>Isolated skill check</small></button>
+        <button data-action="review-gates"><span class="action-symbol">◇</span><strong>Release gate</strong><small>QA / publish locks</small></button>
+      </div></div>
+      <div class="right-section"><div class="section-label">VOICE CAST</div><div class="audio-card"><div class="audio-top"><div class="audio-logo">♫</div><div><strong>Healing Magic · Audition</strong><small>5 characters · Kokoro · 00:26</small></div></div><audio id="voice-player" controls preload="none" src="/media/audition.mp3?key={{KEY}}"></audio><div class="cast-footer"><span class="chip good">✓ Fenrir MC</span><span class="chip">Five distinct voices</span></div></div><a class="voice-setup-link" href="http://127.0.0.1:8771/" target="_blank" rel="noreferrer">◎ Configure Google AI voices ↗</a><span class="voice-hint" id="google-status">Optional; Google API usage may incur charges. Open on laptop.</span></div>
+      <div class="right-section"><div class="section-label">LEADERSHIP</div><div id="leadership"></div></div>
+      <div class="right-section"><div class="section-label">PRODUCTION POLICY</div><div class="policy-card"><span class="policy-symbol">◇</span><strong>Quality above claims</strong><p>Original panels only. Script-to-scene alignment. No fabricated agent results or automatic public upload.</p></div></div>
+    </div>
+  </aside>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="mobile-overlay" class="mobile-overlay"></div>
+</body>
+</html>
