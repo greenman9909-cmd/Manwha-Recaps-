@@ -34,7 +34,7 @@ class QcSeoTtsTests(unittest.TestCase):
     def test_technical_decode_success_not_semantic_certification(self):
         probe = {"status": "PASS", "duration": 60, "width": 1920,
                  "height": 1080}
-        with patch("ashentoons.qc.probe_media", return_value=probe), \\
+        with patch("ashentoons.qc.probe_media", return_value=probe), \
              patch("subprocess.run", return_value=Mock(returncode=0, stderr=b"")) as run:
             result = decode_check(self.root / "video.mp4", expected_duration=60)
         self.assertEqual(result["status"], "PASS")
@@ -44,7 +44,7 @@ class QcSeoTtsTests(unittest.TestCase):
 
     def test_reject_duration_mismatch_before_decode(self):
         with patch("ashentoons.qc.probe_media", return_value={
-                "status": "PASS", "duration": 60, "width": 1280, "height": 720}), \\
+                "status": "PASS", "duration": 60, "width": 1280, "height": 720}), \
              patch("subprocess.run") as run:
             r = decode_check(self.root / "x.mp4", 75)
         self.assertEqual(r["status"], "FAIL")
@@ -52,7 +52,7 @@ class QcSeoTtsTests(unittest.TestCase):
 
     def test_reject_corrupt_decode(self):
         with patch("ashentoons.qc.probe_media", return_value={
-                "status": "PASS", "duration": 60, "width": 1280, "height": 720}), \\
+                "status": "PASS", "duration": 60, "width": 1280, "height": 720}), \
              patch("subprocess.run", return_value=Mock(returncode=1, stderr=b"damaged")):
             self.assertEqual(decode_check(self.root / "x.mp4")["status"], "FAIL")
 
