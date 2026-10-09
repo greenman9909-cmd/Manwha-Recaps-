@@ -41,6 +41,8 @@ def extract_review_frames(manifest: dict, source_root: Path,
         return {"status": "FAIL", "errors": ["review video does not match planned part duration"]}
     if not isinstance(output_dir, Path) or output_dir.is_symlink():
         return {"status": "FAIL", "errors": ["unsafe review output directory"]}
+    if (output_dir / "review-index.json").exists():
+        return {"status": "FAIL", "errors": ["review index already exists; preserve earlier review"]}
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
     except OSError:
