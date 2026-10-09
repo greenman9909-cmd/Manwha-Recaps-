@@ -17,6 +17,9 @@ from .storyboard import audit_storyboard, review_template, check_review
 from .qc import decode_check
 from .seo import seo_draft
 from .tts import synthesize
+from .narrate import narrate_script
+from .review_frames import extract_review_frames
+from .workspace import initialize_workspace
 
 
 def _load_json(path: Path) -> dict:
@@ -115,6 +118,25 @@ def main(argv=None):
     tts.add_argument("output", type=Path)
     tts.add_argument("--speed", type=float, default=1.0)
 
+    script = sub.add_parser("narrate-script", help="generate WAV clips and timed manifest with Kokoro")
+    script.add_argument("script", type=Path)
+    script.add_argument("--source-root", type=Path, required=True)
+    script.add_argument("--output-manifest", type=Path, required=True)
+    script.add_argument("--audio-subdirectory", default="narration")
+    script.add_argument("--speed", type=float, default=1.0)
+
+    frames = sub.add_parser("review-frames", help="extract part MP4 frames for shot-by-shot review")
+    frames.add_argument("manifest", type=Path)
+    frames.add_argument("--source-root", type=Path, required=True)
+    frames.add_argument("--video", type=Path, required=True)
+    frames.add_argument("--part", type=int, required=True)
+    frames.add_argument("--output-dir", type=Path, required=True)
+    frames.add_argument("--target-seconds", type=float, default=240)
+    frames.add_argument("--max-seconds", type=float, default=300)
+
+    workspace = sub.add_parser("workspace-init", help="prepare an AshenToons folder without deleting files")
+    workspace.add_argument("directory", type=Path)
+
     args = parser.parse_args(argv)
     try:
         if args.command == "hash":
@@ -128,6 +150,16 @@ def main(argv=None):
             report = render_clip(args.source_root, args.panel, args.audio,
                                  args.output, args.duration, args.width,
                                  args.height, motion=args.motion)
+        elif args.command == "workspace-init":
+            report = initialize_workspace(args.directory)
+        elif args.command == "narrate-script":
+            report = narrate_script(_load_json(args.script), args.source_root,
+                                    args.output_manifest, args.audio_subdirectory,
+                                    args.speed)
+        elif args.command == "review-frames":
+            report = extract_review_frames(
+                _load_json(args.manifest), args.source_root, args.video,
+                args.part, args.output_dir, args.target_seconds, args.max_seconds)
         elif args.command == "tts-line":
             report = synthesize(args.text, args.output, speed=args.speed)
         elif args.command == "probe":
