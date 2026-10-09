@@ -1,11 +1,11 @@
-# AshenToons Studio — v0.3 (local-first segment pipeline)
+# AshenToons Studio — v0.4 candidate (local-first segment pipeline)
 
 **A practical, fail-closed Python/FFmpeg toolkit for producing manhwa recap MP4s in short, reviewable parts.** Designed for GPT-6 planning and deterministic local execution. **No public YouTube publishing or autonomous editorial certification is claimed.**
 
 ## Implemented
 
 - Source-only panel verification: paths stay inside `--source-root`, expected SHA-256, source signatures.
-- Narration-first timing: **Kokoro-82M English Puck (`am_puck`)**, optional local TTS, SHA-addressed WAV reuse.
+- Narration-first timing: optional local **Kokoro-82M English character cast**, with stable per-speaker voice mapping, MC-led narration and voice-separated SHA-addressed WAV reuse. Old Puck-only scripts still work.
 - Required panel-to-narration notes: chapter, event, panel summary, match reason, narrative role.
 - **3–5 minute target parts** (240s target, 300s maximum; short final part allowed).
 - FFmpeg static/slow-zoom source-panel MP4 renderer, hash-keyed clip cache, stream-copy part assembly.
@@ -31,7 +31,7 @@ ashentoons --help
 ashentoons workspace-init "D:\AshenToons"
 ```
 
-For optional **Kokoro-82M Puck** narration (may fetch model weights on first use):
+For optional **Kokoro-82M English cast** narration (may fetch model weights on first use):
 
 ```powershell
 python -m pip install -e ".[tts,images,youtube]"
@@ -40,6 +40,8 @@ python -m pip install -e ".[tts,images,youtube]"
 ## Complete source → narration → parts → review workflow
 
 1. Place authorized source panels in `D:\AshenToons\sources`. Create a script based on [examples/episode-script.sample.json](examples/episode-script.sample.json), using relative panel names like `sources/ch01-panel01.png`.
+   **Optional character cast:** put `"voices": {"MC":"am_fenrir", "Hero":"am_puck", "Rival":"am_michael"}` in the script, then `"speaker": "MC"` (or `"speaker": "Hero"`, etc.) on each relevant clip. The MC voice must differ from character voices. Legacy scripts default to `am_puck`. This routes distinct on-device voices but does **not** independently verify dialogue or emotion. See [storytelling and multi-voice workflow](docs/STORYTELLING_MULTIVOICE.md).
+
 2. Hash each original panel with `ashentoons hash "D:\AshenToons\sources\ch01-panel01.png"` and paste the actual 64-character hash in the script. Script fields explicitly set `source_authorized: true` (this declaration is **not** license evidence), `subtitles: false`, `generated_visuals: false`.
 3. Generate all WAV clips and an audio-timed manifest with one reused Kokoro instance:
 
@@ -108,4 +110,4 @@ The real media smoke test requires FFmpeg. See [architecture](docs/ARCHITECTURE.
 
 ## Limitations / roadmap
 
-Automated scene meaning verification, speech transcription/alignment, expressive multi-scene editing, advanced thumbnail A/B experimentation, public YouTube publishing, real channel analytics, trending-title A/B research, and independent release certification are **not implemented**. GPT-6 can help write and review story plans, but it is not magically running inside this local package and cannot replace editorial approval.
+Automated scene meaning verification, speech transcription/alignment, independently verified emotional acting, advanced thumbnail A/B experimentation, public YouTube publishing, real channel analytics, trending-title A/B research, and independent release certification are **not implemented**. GPT-6 can help write and review story plans, but it is not magically running inside this local package and cannot replace editorial approval.
