@@ -109,7 +109,7 @@ class ProductionTests(unittest.TestCase):
             return {"status": "PASS"}
         def assemble(clips, output):
             output.write_bytes(b"part")
-            return {"status": "PASS", "duration": 20, "sha256": "a" * 64}
+            return {"status": "PASS", "duration": 20, "sha256": file_hash(output)}
         probe = {"status": "PASS", "duration": 10, "width": 1280, "height": 720}
         with patch("ashentoons.production.probe_audio", return_value={"status": "PASS", "duration": 10}), \
              patch("ashentoons.production.render_clip", side_effect=write_clip) as render, \
@@ -127,5 +127,7 @@ class ProductionTests(unittest.TestCase):
             self.assertFalse(second["ready_to_publish"])
             one["clips"][0]["motion"] = "zoom_in"
             third = render_parts(one, self.root, self.root / "exports")
-            self.assertEqual(third["status"], "PASS")
-            self.assertEqual(render.call_count, 3)
+            # Changed content must never silently overwrite a reviewed MP4.
+            self.assertEqual(third["status"], "FAIL")
+            self.assertTrue((self.root / "exports" / "part-001.mp4").exists())
+            self.assertEqual(render.call_count, 2)
